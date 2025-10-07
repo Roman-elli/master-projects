@@ -22,6 +22,3 @@ def readFiles(foldername):
         print("File not found")
     return data
 
-def outliers(data_array):
-    
-    pass

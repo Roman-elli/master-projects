@@ -1,0 +1,1 @@
+python ./src/mainActivity.py
