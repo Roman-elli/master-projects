@@ -8,7 +8,7 @@ def main():
     data_array = readFiles(cfg.ASSETS_FOLDERS_PATH)
 
     # 3.1
-    analyzed_outliers = outliers(data_array)
+    outliers(data_array)
     
 if __name__ == '__main__':
     main()
