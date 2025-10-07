@@ -1,23 +1,27 @@
 import os
 import numpy as np
+import matplotlib as mp
 
 def readFiles(foldername):
-    lista_dados = []
+    data = []
 
-    for arquivo in os.listdir(foldername):
-        if arquivo.endswith(".cvg"):
-            caminho_arquivo = os.path.join(foldername, arquivo)
-            
-            try:
-                data = np.loadtxt(caminho_arquivo, delimiter=",")
-                lista_dados.append(data)
-            except Exception as e:
-                print(f"Erro lendo {caminho_arquivo}: {e}")
+    for folder in os.listdir(foldername):
+        folder_path = os.path.join(foldername, folder)
+        
+        data_individual = []
 
-    if lista_dados:
-        try:
-            return np.array(lista_dados)
-        except ValueError:
-            return np.array(lista_dados, dtype=object)
-    else:
-        return np.array([])
+        for file in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file)
+            array = np.loadtxt(file_path, delimiter=',')
+            data_individual.append(array)
+
+        if data_individual:
+            data.append(data_individual)
+
+    if not data:
+        print("File not found")
+    return data
+
+def outliers(data_array):
+    
+    pass
