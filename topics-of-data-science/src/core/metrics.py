@@ -37,7 +37,6 @@ def activity_metric(data_array, sensor='acc'):
     plt.title(f"Boxplot of {sensor} vector magnitude by activity")
     plt.grid(True, axis='y', linestyle='--', alpha=0.7)
 
-    # 3.2
     print(f"Outliers density for {sensor}:")
     for a in unique_activities:
         activity_data = modules[activities == a]
@@ -49,38 +48,19 @@ def activity_metric(data_array, sensor='acc'):
         sup_limit = q3 + 1.5 * iqr
 
         outliers = np.sum((activity_data < low_limit) | (activity_data > sup_limit))
-        
         d = (outliers / n_r) * 100
         print(f"Activity {a}: {d:.2f}% outliers ({outliers}/{n_r})")
 
     print("\n***********************************************\n")
-    
     plt.show()
 
-def zscore_outliers(data_array, sensor='acc', k=3):
-    sensor_cols = {
-        'acc': [1, 2, 3],
-        'gyro': [4, 5, 6],
-        'mag': [7, 8, 9]
-    }
+    return modules, activities
 
-    cols = sensor_cols[sensor]
-    modules = []
-    activities = []
-
-    for individuo in data_array:
-        for atividade in individuo:
-            x, y, z = atividade[:, cols].T
-            modulo = np.sqrt(x**2 + y**2 + z**2)
-            modules.extend(modulo)
-            activities.extend(atividade[:, 11].astype(int))  # coluna 12
-
-    modules = np.array(modules)
-    activities = np.array(activities)
+def zscore_outliers(modules, activities, sensor='acc', k=3):
     unique_activities = np.unique(activities)
 
     plt.figure(figsize=(12, 6))
-
+    print(f"Outliers density for {sensor} (Z-score method, k={k}):")
     for a in unique_activities:
         dados_atividade = modules[activities == a]
         mean = np.mean(dados_atividade)
@@ -89,15 +69,27 @@ def zscore_outliers(data_array, sensor='acc', k=3):
 
         mask_outliers = np.abs(z_scores) > k
 
-        plt.scatter([a]*len(dados_atividade[~mask_outliers]), dados_atividade[~mask_outliers],
-                    color='blue', alpha=0.6, label='Normal' if a==unique_activities[0] else "")
+        total = len(dados_atividade)
+        outliers = np.sum(mask_outliers)
+        perc = (outliers / total) * 100
 
-        plt.scatter([a]*len(dados_atividade[mask_outliers]), dados_atividade[mask_outliers],
-                    color='red', alpha=0.8, label='Outlier' if a==unique_activities[0] else "")
+        print(f"Activity {a}: {perc:.2f}% outliers ({outliers}/{total})")
+
+        # Plotagem
+        plt.scatter([a]*len(dados_atividade[~mask_outliers]),
+                    dados_atividade[~mask_outliers],
+                    color='blue', alpha=0.6)
+
+        plt.scatter([a]*len(dados_atividade[mask_outliers]),
+                    dados_atividade[mask_outliers],
+                    color='red', alpha=0.8)
+
+    print("\n***********************************************\n")
 
     plt.xlabel("Activity (Column 12)")
     plt.ylabel(f"{sensor.upper()} Vector Magnitude")
     plt.title(f"{sensor.upper()} Vector Magnitude with Z-score Outliers (k={k})")
-    plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
+
+
