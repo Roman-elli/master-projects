@@ -3,9 +3,9 @@ import numpy as np
 
 def activity_metric(data_array, sensor='acc'):
     sensor_cols = {
-        'acc': [2, 3, 4],
-        'gyro': [5, 6, 7],
-        'mag': [8, 9, 10]
+        'acc': [1, 2, 3],
+        'gyro': [4, 5, 6],
+        'mag': [7, 8, 9]
     }
 
     cols = sensor_cols[sensor]
@@ -92,4 +92,7 @@ def zscore_outliers(modules, activities, sensor='acc', k=3):
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
 
+def k_mean(n, sensor='acc'):
+    
+    pass
 

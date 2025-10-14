@@ -1,6 +1,7 @@
 from utils.io import readFiles
 from core.metrics import activity_metric, zscore_outliers
 import config as cfg
+from sklearn.cluster import KMeans
 
 def main():
     # 2
@@ -16,6 +17,9 @@ def main():
         zscore_outliers(modules_acc, activities_acc, sensor='acc', k=k_value)
         zscore_outliers(modules_gyro, activities_gyro, sensor='gyro', k=k_value)
         zscore_outliers(modules_mag, activities_mag, sensor='mag', k=k_value)
+    
+    #3.6
+    
 
 if __name__ == '__main__':
     main()
