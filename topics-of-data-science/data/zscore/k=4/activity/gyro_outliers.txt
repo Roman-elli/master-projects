@@ -1,0 +1,100 @@
+Outliers density for GYRO | Left Wrist (Z-score method, k=4):
+  Activity 1: 0.90% outliers (1461/162125)
+  Activity 2: 0.32% outliers (276/85632)
+  Activity 3: 0.39% outliers (329/83584)
+  Activity 4: 0.31% outliers (437/141342)
+  Activity 5: 0.28% outliers (401/142878)
+  Activity 6: 0.33% outliers (296/90127)
+  Activity 7: 0.44% outliers (197/45071)
+  Activity 8: 0.43% outliers (27/6272)
+  Activity 9: 0.58% outliers (34/5888)
+  Activity 10: 0.70% outliers (45/6400)
+  Activity 11: 1.00% outliers (59/5888)
+  Activity 12: 0.29% outliers (11/3810)
+  Activity 13: 0.89% outliers (68/7620)
+  Activity 14: 0.34% outliers (13/3810)
+  Activity 15: 0.31% outliers (6/1905)
+  Activity 16: 0.52% outliers (10/1905)
+
+---------------------------------------------
+
+Outliers density for GYRO | Right Wrist (Z-score method, k=4):
+  Activity 1: 1.10% outliers (1744/157882)
+  Activity 2: 0.38% outliers (323/83968)
+  Activity 3: 0.51% outliers (413/81152)
+  Activity 4: 0.30% outliers (421/139934)
+  Activity 5: 0.28% outliers (395/142366)
+  Activity 6: 0.22% outliers (201/89359)
+  Activity 7: 0.37% outliers (161/43791)
+  Activity 8: 0.41% outliers (27/6656)
+  Activity 9: 1.07% outliers (60/5632)
+  Activity 10: 0.75% outliers (50/6656)
+  Activity 11: 0.89% outliers (48/5376)
+  Activity 12: 0.45% outliers (17/3810)
+  Activity 13: 1.57% outliers (120/7620)
+  Activity 14: 0.60% outliers (23/3810)
+  Activity 15: 0.00% outliers (0/1905)
+  Activity 16: 0.37% outliers (7/1905)
+
+---------------------------------------------
+
+Outliers density for GYRO | Chest (Z-score method, k=4):
+  Activity 1: 0.94% outliers (1454/155108)
+  Activity 2: 0.40% outliers (327/81920)
+  Activity 3: 0.60% outliers (496/82176)
+  Activity 4: 0.30% outliers (400/134686)
+  Activity 5: 0.32% outliers (430/134942)
+  Activity 6: 0.07% outliers (64/87311)
+  Activity 7: 0.19% outliers (82/43279)
+  Activity 8: 0.44% outliers (29/6656)
+  Activity 9: 0.90% outliers (53/5888)
+  Activity 10: 0.14% outliers (8/5760)
+  Activity 11: 0.83% outliers (52/6272)
+  Activity 12: 0.71% outliers (27/3810)
+  Activity 13: 1.43% outliers (109/7620)
+  Activity 14: 0.16% outliers (6/3810)
+  Activity 15: 0.63% outliers (12/1905)
+  Activity 16: 0.42% outliers (8/1905)
+
+---------------------------------------------
+
+Outliers density for GYRO | Right Upper Leg (Z-score method, k=4):
+  Activity 1: 0.86% outliers (1434/166795)
+  Activity 2: 0.25% outliers (213/86016)
+  Activity 3: 0.21% outliers (178/86528)
+  Activity 4: 0.13% outliers (180/140318)
+  Activity 5: 0.11% outliers (155/140958)
+  Activity 6: 0.10% outliers (88/90639)
+  Activity 7: 0.10% outliers (44/45199)
+  Activity 8: 0.28% outliers (16/5632)
+  Activity 9: 0.58% outliers (31/5376)
+  Activity 10: 0.58% outliers (32/5504)
+  Activity 11: 0.35% outliers (19/5504)
+  Activity 12: 0.08% outliers (3/3810)
+  Activity 13: 1.77% outliers (135/7620)
+  Activity 14: 0.03% outliers (1/3810)
+  Activity 15: 0.84% outliers (16/1905)
+  Activity 16: 0.42% outliers (8/1905)
+
+---------------------------------------------
+
+Outliers density for GYRO | Left Lower Leg (Z-score method, k=4):
+  Activity 1: 0.38% outliers (621/163631)
+  Activity 2: 0.53% outliers (441/83968)
+  Activity 3: 0.60% outliers (511/85248)
+  Activity 4: 0.06% outliers (80/143134)
+  Activity 5: 0.06% outliers (85/142622)
+  Activity 6: 0.23% outliers (201/88975)
+  Activity 7: 0.21% outliers (97/45839)
+  Activity 8: 1.15% outliers (66/5760)
+  Activity 9: 1.28% outliers (67/5248)
+  Activity 10: 0.71% outliers (40/5632)
+  Activity 11: 1.33% outliers (68/5120)
+  Activity 12: 0.13% outliers (5/3810)
+  Activity 13: 0.58% outliers (44/7620)
+  Activity 14: 0.18% outliers (7/3810)
+  Activity 15: 0.21% outliers (4/1905)
+  Activity 16: 0.05% outliers (1/1905)
+
+---------------------------------------------
+

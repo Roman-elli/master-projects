@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import matplotlib as mp
 
 def readFiles(foldername):
     data = []

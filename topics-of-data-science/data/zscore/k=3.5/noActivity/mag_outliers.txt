@@ -1,0 +1,25 @@
+Outliers density for MAG | Left Wrist (Z-score method, k=3.5):
+  Total values: 0.32% outliers (2557/794257)
+
+---------------------------------------------
+
+Outliers density for MAG | Right Wrist (Z-score method, k=3.5):
+  Total values: 0.14% outliers (1078/781822)
+
+---------------------------------------------
+
+Outliers density for MAG | Chest (Z-score method, k=3.5):
+  Total values: 0.05% outliers (405/763048)
+
+---------------------------------------------
+
+Outliers density for MAG | Right Upper Leg (Z-score method, k=3.5):
+  Total values: 0.03% outliers (207/797519)
+
+---------------------------------------------
+
+Outliers density for MAG | Left Lower Leg (Z-score method, k=3.5):
+  Total values: 0.09% outliers (697/794227)
+
+---------------------------------------------
+

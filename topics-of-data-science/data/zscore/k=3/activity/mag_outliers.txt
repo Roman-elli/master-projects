@@ -1,0 +1,100 @@
+Outliers density for MAG | Left Wrist (Z-score method, k=3):
+  Activity 1: 0.00% outliers (8/162125)
+  Activity 2: 0.00% outliers (2/85632)
+  Activity 3: 0.01% outliers (10/83584)
+  Activity 4: 0.68% outliers (961/141342)
+  Activity 5: 0.82% outliers (1174/142878)
+  Activity 6: 1.69% outliers (1523/90127)
+  Activity 7: 1.88% outliers (849/45071)
+  Activity 8: 0.03% outliers (2/6272)
+  Activity 9: 1.29% outliers (76/5888)
+  Activity 10: 0.12% outliers (8/6400)
+  Activity 11: 0.95% outliers (56/5888)
+  Activity 12: 0.00% outliers (0/3810)
+  Activity 13: 1.78% outliers (136/7620)
+  Activity 14: 0.00% outliers (0/3810)
+  Activity 15: 0.42% outliers (8/1905)
+  Activity 16: 3.25% outliers (62/1905)
+
+---------------------------------------------
+
+Outliers density for MAG | Right Wrist (Z-score method, k=3):
+  Activity 1: 0.00% outliers (0/157882)
+  Activity 2: 0.00% outliers (1/83968)
+  Activity 3: 0.00% outliers (0/81152)
+  Activity 4: 0.08% outliers (116/139934)
+  Activity 5: 0.06% outliers (92/142366)
+  Activity 6: 0.49% outliers (441/89359)
+  Activity 7: 0.37% outliers (160/43791)
+  Activity 8: 2.52% outliers (168/6656)
+  Activity 9: 0.18% outliers (10/5632)
+  Activity 10: 0.38% outliers (25/6656)
+  Activity 11: 0.13% outliers (7/5376)
+  Activity 12: 0.03% outliers (1/3810)
+  Activity 13: 0.00% outliers (0/7620)
+  Activity 14: 0.00% outliers (0/3810)
+  Activity 15: 0.00% outliers (0/1905)
+  Activity 16: 0.10% outliers (2/1905)
+
+---------------------------------------------
+
+Outliers density for MAG | Chest (Z-score method, k=3):
+  Activity 1: 0.83% outliers (1293/155108)
+  Activity 2: 1.35% outliers (1104/81920)
+  Activity 3: 0.77% outliers (632/82176)
+  Activity 4: 0.67% outliers (898/134686)
+  Activity 5: 0.77% outliers (1041/134942)
+  Activity 6: 0.77% outliers (674/87311)
+  Activity 7: 0.54% outliers (232/43279)
+  Activity 8: 3.40% outliers (226/6656)
+  Activity 9: 1.60% outliers (94/5888)
+  Activity 10: 2.53% outliers (146/5760)
+  Activity 11: 2.10% outliers (132/6272)
+  Activity 12: 0.10% outliers (4/3810)
+  Activity 13: 0.24% outliers (18/7620)
+  Activity 14: 0.68% outliers (26/3810)
+  Activity 15: 1.31% outliers (25/1905)
+  Activity 16: 0.05% outliers (1/1905)
+
+---------------------------------------------
+
+Outliers density for MAG | Right Upper Leg (Z-score method, k=3):
+  Activity 1: 0.00% outliers (1/166795)
+  Activity 2: 0.23% outliers (200/86016)
+  Activity 3: 0.02% outliers (16/86528)
+  Activity 4: 0.27% outliers (374/140318)
+  Activity 5: 0.18% outliers (251/140958)
+  Activity 6: 1.11% outliers (1004/90639)
+  Activity 7: 0.90% outliers (409/45199)
+  Activity 8: 0.71% outliers (40/5632)
+  Activity 9: 1.32% outliers (71/5376)
+  Activity 10: 0.04% outliers (2/5504)
+  Activity 11: 1.80% outliers (99/5504)
+  Activity 12: 0.00% outliers (0/3810)
+  Activity 13: 0.70% outliers (53/7620)
+  Activity 14: 0.00% outliers (0/3810)
+  Activity 15: 0.21% outliers (4/1905)
+  Activity 16: 0.05% outliers (1/1905)
+
+---------------------------------------------
+
+Outliers density for MAG | Left Lower Leg (Z-score method, k=3):
+  Activity 1: 0.00% outliers (7/163631)
+  Activity 2: 0.02% outliers (19/83968)
+  Activity 3: 0.01% outliers (8/85248)
+  Activity 4: 0.22% outliers (312/143134)
+  Activity 5: 0.07% outliers (101/142622)
+  Activity 6: 1.08% outliers (961/88975)
+  Activity 7: 2.19% outliers (1006/45839)
+  Activity 8: 0.00% outliers (0/5760)
+  Activity 9: 0.00% outliers (0/5248)
+  Activity 10: 0.02% outliers (1/5632)
+  Activity 11: 0.00% outliers (0/5120)
+  Activity 12: 1.57% outliers (60/3810)
+  Activity 13: 0.01% outliers (1/7620)
+  Activity 14: 0.00% outliers (0/3810)
+  Activity 15: 0.00% outliers (0/1905)
+  Activity 16: 0.00% outliers (0/1905)
+
+---------------------------------------------
+

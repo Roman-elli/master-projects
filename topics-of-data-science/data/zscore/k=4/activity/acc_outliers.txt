@@ -1,0 +1,100 @@
+Outliers density for ACC | Left Wrist (Z-score method, k=4):
+  Activity 1: 0.65% outliers (1047/162125)
+  Activity 2: 0.18% outliers (150/85632)
+  Activity 3: 0.44% outliers (367/83584)
+  Activity 4: 0.26% outliers (368/141342)
+  Activity 5: 0.23% outliers (330/142878)
+  Activity 6: 0.37% outliers (329/90127)
+  Activity 7: 0.40% outliers (181/45071)
+  Activity 8: 1.18% outliers (74/6272)
+  Activity 9: 1.56% outliers (92/5888)
+  Activity 10: 1.45% outliers (93/6400)
+  Activity 11: 1.26% outliers (74/5888)
+  Activity 12: 0.21% outliers (8/3810)
+  Activity 13: 0.54% outliers (41/7620)
+  Activity 14: 0.18% outliers (7/3810)
+  Activity 15: 0.37% outliers (7/1905)
+  Activity 16: 0.37% outliers (7/1905)
+
+---------------------------------------------
+
+Outliers density for ACC | Right Wrist (Z-score method, k=4):
+  Activity 1: 0.62% outliers (977/157882)
+  Activity 2: 0.18% outliers (155/83968)
+  Activity 3: 0.27% outliers (216/81152)
+  Activity 4: 0.20% outliers (283/139934)
+  Activity 5: 0.21% outliers (302/142366)
+  Activity 6: 0.32% outliers (288/89359)
+  Activity 7: 0.35% outliers (152/43791)
+  Activity 8: 1.14% outliers (76/6656)
+  Activity 9: 1.37% outliers (77/5632)
+  Activity 10: 1.02% outliers (68/6656)
+  Activity 11: 1.66% outliers (89/5376)
+  Activity 12: 0.63% outliers (24/3810)
+  Activity 13: 0.79% outliers (60/7620)
+  Activity 14: 0.55% outliers (21/3810)
+  Activity 15: 0.63% outliers (12/1905)
+  Activity 16: 0.26% outliers (5/1905)
+
+---------------------------------------------
+
+Outliers density for ACC | Chest (Z-score method, k=4):
+  Activity 1: 0.74% outliers (1153/155108)
+  Activity 2: 0.21% outliers (168/81920)
+  Activity 3: 0.21% outliers (170/82176)
+  Activity 4: 0.12% outliers (163/134686)
+  Activity 5: 0.12% outliers (156/134942)
+  Activity 6: 0.36% outliers (312/87311)
+  Activity 7: 0.41% outliers (177/43279)
+  Activity 8: 1.19% outliers (79/6656)
+  Activity 9: 1.43% outliers (84/5888)
+  Activity 10: 1.23% outliers (71/5760)
+  Activity 11: 1.58% outliers (99/6272)
+  Activity 12: 0.26% outliers (10/3810)
+  Activity 13: 1.42% outliers (108/7620)
+  Activity 14: 0.18% outliers (7/3810)
+  Activity 15: 0.10% outliers (2/1905)
+  Activity 16: 0.21% outliers (4/1905)
+
+---------------------------------------------
+
+Outliers density for ACC | Right Upper Leg (Z-score method, k=4):
+  Activity 1: 0.48% outliers (808/166795)
+  Activity 2: 0.18% outliers (156/86016)
+  Activity 3: 0.28% outliers (243/86528)
+  Activity 4: 0.67% outliers (934/140318)
+  Activity 5: 0.71% outliers (997/140958)
+  Activity 6: 0.62% outliers (558/90639)
+  Activity 7: 0.65% outliers (292/45199)
+  Activity 8: 0.89% outliers (50/5632)
+  Activity 9: 1.26% outliers (68/5376)
+  Activity 10: 1.24% outliers (68/5504)
+  Activity 11: 1.27% outliers (70/5504)
+  Activity 12: 1.05% outliers (40/3810)
+  Activity 13: 1.33% outliers (101/7620)
+  Activity 14: 0.42% outliers (16/3810)
+  Activity 15: 1.00% outliers (19/1905)
+  Activity 16: 0.47% outliers (9/1905)
+
+---------------------------------------------
+
+Outliers density for ACC | Left Lower Leg (Z-score method, k=4):
+  Activity 1: 0.24% outliers (393/163631)
+  Activity 2: 0.26% outliers (222/83968)
+  Activity 3: 0.30% outliers (260/85248)
+  Activity 4: 0.58% outliers (831/143134)
+  Activity 5: 0.77% outliers (1105/142622)
+  Activity 6: 0.64% outliers (573/88975)
+  Activity 7: 0.72% outliers (328/45839)
+  Activity 8: 0.95% outliers (55/5760)
+  Activity 9: 0.61% outliers (32/5248)
+  Activity 10: 0.82% outliers (46/5632)
+  Activity 11: 0.62% outliers (32/5120)
+  Activity 12: 0.68% outliers (26/3810)
+  Activity 13: 0.77% outliers (59/7620)
+  Activity 14: 0.63% outliers (24/3810)
+  Activity 15: 0.47% outliers (9/1905)
+  Activity 16: 0.52% outliers (10/1905)
+
+---------------------------------------------
+

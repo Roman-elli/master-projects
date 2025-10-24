@@ -1,0 +1,100 @@
+Outliers density for mag | Left Wrist:
+  Activity 1: 0.00% outliers (1/162125)
+  Activity 2: 0.00% outliers (0/85632)
+  Activity 3: 0.01% outliers (9/83584)
+  Activity 4: 1.09% outliers (1541/141342)
+  Activity 5: 1.11% outliers (1592/142878)
+  Activity 6: 5.50% outliers (4959/90127)
+  Activity 7: 5.57% outliers (2509/45071)
+  Activity 8: 0.03% outliers (2/6272)
+  Activity 9: 3.28% outliers (193/5888)
+  Activity 10: 0.00% outliers (0/6400)
+  Activity 11: 3.02% outliers (178/5888)
+  Activity 12: 0.00% outliers (0/3810)
+  Activity 13: 3.40% outliers (259/7620)
+  Activity 14: 0.00% outliers (0/3810)
+  Activity 15: 0.47% outliers (9/1905)
+  Activity 16: 5.35% outliers (102/1905)
+
+---------------------------------------------
+
+Outliers density for mag | Right Wrist:
+  Activity 1: 0.00% outliers (0/157882)
+  Activity 2: 6.67% outliers (5603/83968)
+  Activity 3: 4.77% outliers (3868/81152)
+  Activity 4: 1.45% outliers (2030/139934)
+  Activity 5: 1.34% outliers (1906/142366)
+  Activity 6: 0.39% outliers (349/89359)
+  Activity 7: 0.22% outliers (97/43791)
+  Activity 8: 3.49% outliers (232/6656)
+  Activity 9: 7.35% outliers (414/5632)
+  Activity 10: 0.84% outliers (56/6656)
+  Activity 11: 6.83% outliers (367/5376)
+  Activity 12: 0.03% outliers (1/3810)
+  Activity 13: 0.00% outliers (0/7620)
+  Activity 14: 6.67% outliers (254/3810)
+  Activity 15: 6.67% outliers (127/1905)
+  Activity 16: 1.57% outliers (30/1905)
+
+---------------------------------------------
+
+Outliers density for mag | Chest:
+  Activity 1: 1.65% outliers (2562/155108)
+  Activity 2: 21.36% outliers (17497/81920)
+  Activity 3: 21.10% outliers (17341/82176)
+  Activity 4: 8.12% outliers (10934/134686)
+  Activity 5: 8.80% outliers (11875/134942)
+  Activity 6: 5.16% outliers (4509/87311)
+  Activity 7: 4.79% outliers (2071/43279)
+  Activity 8: 15.84% outliers (1054/6656)
+  Activity 9: 16.24% outliers (956/5888)
+  Activity 10: 20.49% outliers (1180/5760)
+  Activity 11: 20.54% outliers (1288/6272)
+  Activity 12: 16.64% outliers (634/3810)
+  Activity 13: 14.99% outliers (1142/7620)
+  Activity 14: 19.16% outliers (730/3810)
+  Activity 15: 11.81% outliers (225/1905)
+  Activity 16: 19.53% outliers (372/1905)
+
+---------------------------------------------
+
+Outliers density for mag | Right Upper Leg:
+  Activity 1: 0.00% outliers (0/166795)
+  Activity 2: 6.77% outliers (5819/86016)
+  Activity 3: 11.29% outliers (9771/86528)
+  Activity 4: 0.39% outliers (546/140318)
+  Activity 5: 0.18% outliers (251/140958)
+  Activity 6: 2.10% outliers (1899/90639)
+  Activity 7: 1.34% outliers (605/45199)
+  Activity 8: 4.78% outliers (269/5632)
+  Activity 9: 3.92% outliers (211/5376)
+  Activity 10: 8.67% outliers (477/5504)
+  Activity 11: 3.89% outliers (214/5504)
+  Activity 12: 0.00% outliers (0/3810)
+  Activity 13: 0.64% outliers (49/7620)
+  Activity 14: 0.39% outliers (15/3810)
+  Activity 15: 8.87% outliers (169/1905)
+  Activity 16: 2.10% outliers (40/1905)
+
+---------------------------------------------
+
+Outliers density for mag | Left Lower Leg:
+  Activity 1: 0.00% outliers (4/163631)
+  Activity 2: 0.02% outliers (15/83968)
+  Activity 3: 0.01% outliers (7/85248)
+  Activity 4: 0.20% outliers (285/143134)
+  Activity 5: 0.06% outliers (86/142622)
+  Activity 6: 1.61% outliers (1429/88975)
+  Activity 7: 3.35% outliers (1535/45839)
+  Activity 8: 0.00% outliers (0/5760)
+  Activity 9: 1.11% outliers (58/5248)
+  Activity 10: 0.02% outliers (1/5632)
+  Activity 11: 13.12% outliers (672/5120)
+  Activity 12: 1.71% outliers (65/3810)
+  Activity 13: 0.00% outliers (0/7620)
+  Activity 14: 0.00% outliers (0/3810)
+  Activity 15: 0.00% outliers (0/1905)
+  Activity 16: 0.00% outliers (0/1905)
+
+---------------------------------------------
+
