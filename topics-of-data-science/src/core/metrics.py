@@ -557,3 +557,75 @@ def linear_model_correction(modulo_acc, p=3, outlier_density=10, k=3, z=2.0, plo
 
     return beta, error, y_corrected
 
+
+def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0, plot_examples=True):
+    """
+    Modelo linear com janela centrada e múltiplos módulos (ex: acc, gyro, mag).
+    data_modules: dicionário com {'acc': array, 'gyro': array, 'mag': array} (módulos)
+    """
+    half_p = p // 2
+    y = data_modules['acc']  # queremos prever o módulo da aceleração
+
+    # --- Construção da matriz X com janelas centradas ---
+    n = len(y)
+    X = []
+    y_target = []
+
+    # usa as três variáveis como features: acc, gyro, mag
+    mod_acc = data_modules['acc']
+    mod_gyro = data_modules['gyro']
+    mod_mag = data_modules['mag']
+
+    for i in range(half_p, n - half_p):
+        window_acc = mod_acc[i - half_p:i + half_p + 1]
+        window_gyro = mod_gyro[i - half_p:i + half_p + 1]
+        window_mag = mod_mag[i - half_p:i + half_p + 1]
+
+        features = np.concatenate([window_acc, window_gyro, window_mag])
+        X.append(features)
+        y_target.append(y[i])
+
+    X = np.array(X)
+    y_target = np.array(y_target)
+
+    # --- Injeção de outliers e correção (reutiliza função anterior) ---
+    from core.metrics import inject_outliers, linear_model_fit
+
+    y_noisy = inject_outliers(y_target.copy(), x=outlier_density, k=k, z=z)
+
+    # Encontra outliers via z-score
+    z_scores = (y_noisy - np.mean(y_noisy)) / np.std(y_noisy)
+    mask_outliers = np.abs(z_scores) > k
+
+    # Ajuste modelo linear
+    beta = linear_model_fit(X, y_noisy)
+    y_pred = X @ beta[1:] + beta[0]
+
+    # Substitui outliers pelos valores previstos
+    y_corrected = y_noisy.copy()
+    y_corrected[mask_outliers] = y_pred[mask_outliers]
+
+    # --- Análise do erro ---
+    error = y_target - y_pred
+    print(f"Erro médio: {np.mean(np.abs(error)):.4f} | Erro RMS: {np.sqrt(np.mean(error**2)):.4f}")
+
+    # --- Plot ---
+    if plot_examples:
+        plt.figure(figsize=(12, 6))
+        plt.plot(y_target[:500], label="Real")
+        plt.plot(y_pred[:500], label="Previsto", linestyle="--")
+        plt.title(f"Modelo Linear Centrado (p={p})")
+        plt.xlabel("Amostra")
+        plt.ylabel("Módulo Aceleração")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+        plt.figure()
+        plt.hist(error, bins=50, color='gray', alpha=0.7)
+        plt.title(f"Distribuição do Erro (p={p})")
+        plt.xlabel("Erro")
+        plt.ylabel("Frequência")
+        plt.show()
+
+    return beta, y_corrected, error
