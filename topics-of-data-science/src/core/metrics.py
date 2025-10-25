@@ -629,3 +629,25 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
         plt.show()
 
     return beta, y_corrected, error
+
+def compute_acc_modulus_all(data_array):
+    """
+    Calcula o módulo da aceleração (√(x²+y²+z²)) para todas as pessoas e sensores.
+    Retorna um único array concatenado com todos os módulos.
+    """
+    all_mods = []
+
+    for person_data in data_array:  # percorre todas as pessoas
+        for sensor_data in person_data:  # percorre todos os sensores dessa pessoa
+            acc = sensor_data[:, 1:4]  # colunas X, Y, Z do acelerómetro
+            mod = np.linalg.norm(acc, axis=1)
+            all_mods.append(mod)
+
+    # Garante que todos têm o mesmo tamanho (opcional)
+    min_len = min(len(m) for m in all_mods)
+    all_mods = np.array([m[:min_len] for m in all_mods])
+
+    # Junta todos os módulos de todos os sensores/pessoas
+    combined_mod = np.concatenate(all_mods)
+
+    return combined_mod

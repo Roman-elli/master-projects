@@ -1,5 +1,5 @@
 from utils.io import readFiles
-from core.metrics import activity_metric, zscore_outliers, k_mean, manual_kmeans, kmeans_outliers, dbscan_outliers, inject_outliers, linear_model, create_windows, linear_model_correction, linear_model_centered_window
+from core.metrics import activity_metric, zscore_outliers, k_mean, manual_kmeans, kmeans_outliers, dbscan_outliers, inject_outliers, linear_model, create_windows, linear_model_correction, linear_model_centered_window, compute_acc_modulus_all
 import config as cfg
 import numpy as np
 
@@ -34,13 +34,7 @@ def main():
     )
     
     #3.8
-    # Exemplo: dados da aceleração (colunas 1, 2, 3)
-    sensor = 'acc'
-    acc_sensor = data_array[0][0][:, 1:4]   # X, Y, Z do acelerómetro
-
-    # Módulo da aceleração (raiz quadrada da soma dos quadrados)
-    modulo_acc = np.linalg.norm(acc_sensor, axis=1)
-
+    modulo_acc = compute_acc_modulus_all(data_array)
 
     # injeta outliers no módulo
     data_with_outliers = inject_outliers(modulo_acc, x=10, k=3, z=2.0)
