@@ -1,3 +1,3 @@
 # Files & folders path
 ASSETS_FOLDERS_PATH = "assets/"
-LABELS_COUNTER = 4
+LABELS_COUNTER = 16

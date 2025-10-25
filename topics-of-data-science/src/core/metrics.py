@@ -7,6 +7,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+from sklearn.cluster import DBSCAN
+
 def activity_metric(data_array, sensor='acc', save_dir="data/activity", save_plots=True):
     sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
     sensor_cols = {
@@ -248,3 +250,310 @@ def k_mean(data_array, sensor='acc', n_clusters=3, max_iter=100, tol=1e-4, save_
             file_path = os.path.join(folder_path, f"{sensor_name}_k={n_clusters}.png")
             plt.savefig(file_path, dpi=200)
             plt.close(fig)  # fecha o plot para não ocupar memória
+            
+def kmeans_outliers(data_array, sensor, n_clusters, save_dir="data/kmean_outliers", save_plots=True):   
+    os.makedirs(save_dir, exist_ok=True)
+
+    # --- 1️⃣ Extrair colunas do sensor (X, Y, Z) ---
+    sensor_cols = {
+        'acc': [1, 2, 3],
+        'gyro': [4, 5, 6],
+        'mag': [7, 8, 9]
+    }
+    cols = sensor_cols[sensor]
+
+    all_xyz = []
+    for person in data_array:
+        for med in person:
+            data_sensor = med
+            x = data_sensor[:, cols[0]]
+            y = data_sensor[:, cols[1]]
+            z = data_sensor[:, cols[2]]
+            xyz = np.column_stack((x, y, z))
+            all_xyz.append(xyz)
+    X = np.vstack(all_xyz)
+
+    print(f"Executando K-Means manual ({sensor.upper()}) com k={n_clusters} ...")
+
+    # --- 2️⃣ Executar K-Means manual ---
+    labels, centroids = manual_kmeans(X, n_clusters=n_clusters, max_iter=100, tol=1e-4)
+
+    # --- 3️⃣ Calcular distâncias e identificar outliers ---
+    distances = np.linalg.norm(X - centroids[labels], axis=1)
+    outliers = np.zeros(len(X), dtype=bool)
+    k = 3  # limite Z-score padrão
+
+    for c in np.unique(labels):
+        mask = labels == c
+        cluster_dist = distances[mask]
+        mean = np.mean(cluster_dist)
+        std = np.std(cluster_dist)
+        z = (cluster_dist - mean) / std
+        outliers[mask] = np.abs(z) > k
+
+    total_outliers = np.sum(outliers)
+    perc = total_outliers / len(X) * 100
+    print(f"Total de outliers (K-Means): {perc:.2f}% ({total_outliers}/{len(X)})")
+
+    # --- 4️⃣ Guardar resultados num ficheiro ---
+    out_file = os.path.join(save_dir, f"{sensor}_outliers_kmeans.txt")
+    with open(out_file, "w") as f:
+        f.write(f"K-Means Outliers ({sensor.upper()})\n")
+        f.write(f"Clusters (k): {n_clusters}\n")
+        f.write(f"Total: {len(X)} amostras\n")
+        f.write(f"Outliers: {total_outliers} ({perc:.2f}%)\n\n")
+        for c in np.unique(labels):
+            cluster_mask = labels == c
+            cluster_outliers = np.sum(outliers[cluster_mask])
+            total_cluster = np.sum(cluster_mask)
+            f.write(f"Cluster {c}: {cluster_outliers}/{total_cluster} ({(cluster_outliers/total_cluster)*100:.2f}%)\n")
+
+    # --- 5️⃣ Plot 3D (se pedido) ---
+    if save_plots:
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+
+        # pontos normais
+        ax.scatter(X[~outliers, 0], X[~outliers, 1], X[~outliers, 2],
+                   c=labels[~outliers], cmap='tab10', s=8, alpha=0.6)
+
+        # outliers
+        ax.scatter(X[outliers, 0], X[outliers, 1], X[outliers, 2],
+                   c='red', s=25, label='Outliers', alpha=0.8)
+
+        # centróides
+        ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2],
+                   c='black', s=100, marker='X', label='Centroids')
+
+        ax.set_title(f"{sensor.upper()} | K-Means Outliers (k={n_clusters})")
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.set_zlabel("Z")
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f"{sensor}_kmeans_outliers_k={n_clusters}.png"), dpi=200)
+        plt.close()
+
+    return outliers
+
+def dbscan_outliers(data_array, sensor='mag', eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True):
+
+    os.makedirs(save_dir, exist_ok=True)
+
+    # --- 1️⃣ Extrair colunas X,Y,Z do sensor ---
+    sensor_cols = {
+        'acc': [1, 2, 3],
+        'gyro': [4, 5, 6],
+        'mag': [7, 8, 9]
+    }
+    cols = sensor_cols[sensor]
+
+    all_xyz = []
+    for person in data_array:
+        for med in person:
+            data_sensor = med
+            x = data_sensor[:, cols[0]]
+            y = data_sensor[:, cols[1]]
+            z = data_sensor[:, cols[2]]
+            xyz = np.column_stack((x, y, z))
+            all_xyz.append(xyz)
+    X = np.vstack(all_xyz)
+
+    print(f"Executando DBSCAN ({sensor.upper()}) com eps={eps}, min_samples={min_samples} ...")
+    # Antes do DBSCAN:
+    if len(X) > 50000:
+        print(f"Dataset muito grande ({len(X)} pontos). Amostrando 50.000 para DBSCAN...")
+        idx = np.random.choice(len(X), 50000, replace=False)
+        X = X[idx]
+
+    # --- 2️⃣ Aplicar DBSCAN ---
+    db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
+    labels = db.labels_
+
+    # --- 3️⃣ Identificar outliers ---
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    n_outliers = np.sum(labels == -1)
+    perc_out = (n_outliers / len(X)) * 100
+
+    print(f"Clusters encontrados: {n_clusters}")
+    print(f"Outliers (DBSCAN): {perc_out:.2f}% ({n_outliers}/{len(X)})")
+
+    # --- 4️⃣ Guardar resultados ---
+    out_file = os.path.join(save_dir, f"{sensor}_dbscan_results.txt")
+    with open(out_file, "w") as f:
+        f.write(f"DBSCAN ({sensor.upper()})\n")
+        f.write(f"eps={eps}, min_samples={min_samples}\n")
+        f.write(f"Clusters encontrados: {n_clusters}\n")
+        f.write(f"Total de amostras: {len(X)}\n")
+        f.write(f"Outliers: {n_outliers} ({perc_out:.2f}%)\n")
+
+    # --- 5️⃣ Plot 3D ---
+    if save_plots:
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Cores para clusters
+        unique_labels = set(labels)
+        colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
+
+        for label, color in zip(unique_labels, colors):
+            mask = labels == label
+            if label == -1:
+                color = 'red'  # outliers
+                label_name = 'Outliers'
+            else:
+                label_name = f'Cluster {label}'
+            ax.scatter(X[mask, 0], X[mask, 1], X[mask, 2],
+                       c=color, s=8, alpha=0.6, label=label_name)
+
+        ax.set_title(f"{sensor.upper()} | DBSCAN Clusters & Outliers")
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.set_zlabel("Z")
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f"{sensor}_dbscan_outliers.png"), dpi=200)
+        plt.close()
+
+    return labels
+
+
+def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
+    """
+    Injeta outliers em um array 1D para garantir densidade >= x%.
+    
+    Parâmetros:
+    - array: np.array 1D (valores originais)
+    - x: densidade mínima de outliers (%) desejada
+    - k: limite do z-score
+    - z: amplitude máxima adicional do outlier
+    - random_seed: para reprodutibilidade
+    """
+    np.random.seed(random_seed)
+    array = array.copy()
+    
+    # 1️⃣ calcular média e desvio
+    mu = np.mean(array)
+    sigma = np.std(array)
+    
+    # 2️⃣ identificar outliers existentes
+    z_scores = (array - mu) / sigma
+    existing_outliers = np.abs(z_scores) > k
+    n_outliers = np.sum(existing_outliers)
+    n_total = len(array)
+    
+    # densidade atual
+    d = (n_outliers / n_total) * 100
+    print(f"Densidade atual de outliers: {d:.2f}%")
+    
+    # 3️⃣ se d < x, sortear pontos para se tornarem outliers
+    if d < x:
+        # quantidade de pontos a transformar
+        n_needed = int(np.ceil((x - d)/100 * n_total))
+        
+        # índices de pontos não outliers
+        non_outlier_indices = np.where(~existing_outliers)[0]
+        selected_indices = np.random.choice(non_outlier_indices, size=n_needed, replace=False)
+        
+        for idx in selected_indices:
+            s = np.random.choice([-1, 1])
+            q = np.random.uniform(0, z)
+            array[idx] = mu + s * (k * sigma + q)
+            
+        print(f"Injetados {n_needed} outliers para atingir densidade {x}%")
+    else:
+        print("Densidade já >= x%, não foi necessário injetar outliers")
+    
+    return array
+
+def linear_model(X_train, y_train):
+    """
+    Determina o modelo linear de ordem p usando mínimos quadrados.
+
+    Parâmetros:
+    - X_train: np.array de forma (n_samples, p), dados de entrada
+    - y_train: np.array de forma (n_samples,), saídas correspondentes
+
+    Retorna:
+    - beta: np.array de forma (p+1,), vetor de pesos incluindo o intercepto
+    """
+    # 1️⃣ Adiciona coluna de 1s para o intercepto
+    n_samples = X_train.shape[0]
+    X_aug = np.hstack((np.ones((n_samples, 1)), X_train))  # (n_samples, p+1)
+
+    # 2️⃣ Calcula beta pelos mínimos quadrados
+    # beta = (X^T X)^-1 X^T y
+    XtX = X_aug.T @ X_aug
+    Xty = X_aug.T @ y_train
+    beta = np.linalg.inv(XtX) @ Xty
+
+    return beta
+def create_windows(data, p):
+    """
+    Cria matriz X (janela) e vetor y para modelo linear de ordem p.
+    data: array 1D com módulo da aceleração
+    p: número de valores anteriores a usar
+    """
+    X = []
+    y = []
+    for i in range(p, len(data)):
+        X.append(data[i-p:i])  # p valores anteriores
+        y.append(data[i])      # valor atual
+    return np.array(X), np.array(y)
+
+
+def linear_model_correction(modulo_acc, p=3, outlier_density=10, k=3, z=2.0, plot_examples=True):
+    """
+    Pipeline completo 3.10:
+    1. Injeta outliers no módulo da aceleração
+    2. Treina modelo linear de ordem p
+    3. Substitui outliers pelos valores previstos
+    4. Analisa erro de predição
+    """
+    # 1️⃣ Injeta 10% de outliers
+    data_with_outliers = inject_outliers(modulo_acc, x=outlier_density, k=k, z=z)
+
+    # 2️⃣ Cria janelas
+    X_train, y_train = create_windows(data_with_outliers, p)
+
+    # 3️⃣ Treina modelo linear
+    beta = linear_model(X_train, y_train)
+
+    # 4️⃣ Predição
+    y_pred = np.hstack((np.ones((X_train.shape[0], 1)), X_train)) @ beta
+
+    # 5️⃣ Detecta outliers
+    mu = np.mean(y_train)
+    sigma = np.std(y_train)
+    z_scores = (y_train - mu) / sigma
+    outliers_mask = np.abs(z_scores) > k
+
+    # 6️⃣ Substitui outliers pelos valores previstos
+    y_corrected = y_train.copy()
+    y_corrected[outliers_mask] = y_pred[outliers_mask]
+
+    # 7️⃣ Analisa erro
+    error = y_corrected - y_train
+
+    if plot_examples:
+        # Distribuição do erro
+        plt.figure(figsize=(8,5))
+        plt.hist(error, bins=50, alpha=0.7)
+        plt.title(f"Distribuição do erro (p={p})")
+        plt.xlabel("Erro")
+        plt.ylabel("Frequência")
+        plt.grid(True)
+        plt.show()
+
+        # Exemplo valores reais vs previstos
+        plt.figure(figsize=(10,5))
+        plt.plot(y_train[:100], label='Real')
+        plt.plot(y_corrected[:100], label='Predito (outliers corrigidos)', alpha=0.7)
+        plt.title(f"Valores reais vs previstos (p={p}, primeiras 100 amostras)")
+        plt.xlabel("Amostra")
+        plt.ylabel("Módulo aceleração")
+        plt.legend()
+        plt.show()
+
+    return beta, error, y_corrected
+

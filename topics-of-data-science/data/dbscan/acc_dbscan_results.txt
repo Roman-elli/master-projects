@@ -1,0 +1,5 @@
+DBSCAN (ACC)
+eps=0.5, min_samples=10
+Clusters encontrados: 45
+Total de amostras: 50000
+Outliers: 5940 (11.88%)
