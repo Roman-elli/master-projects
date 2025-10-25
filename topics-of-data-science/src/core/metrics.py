@@ -488,6 +488,7 @@ def linear_model(X_train, y_train):
     beta = np.linalg.inv(XtX) @ Xty
 
     return beta
+
 def create_windows(data, p):
     """
     Cria matriz X (janela) e vetor y para modelo linear de ordem p.
@@ -502,7 +503,7 @@ def create_windows(data, p):
     return np.array(X), np.array(y)
 
 
-def linear_model_correction(modulo_acc, p=3, outlier_density=10, k=3, z=2.0, plot_examples=True):
+def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, plot_examples=True):
     """
     Pipeline completo 3.10:
     1. Injeta outliers no módulo da aceleração
@@ -511,7 +512,7 @@ def linear_model_correction(modulo_acc, p=3, outlier_density=10, k=3, z=2.0, plo
     4. Analisa erro de predição
     """
     # 1️⃣ Injeta 10% de outliers
-    data_with_outliers = inject_outliers(modulo_acc, x=outlier_density, k=k, z=z)
+    data_with_outliers = inject_outliers(modulo, x=outlier_density, k=k, z=z)
 
     # 2️⃣ Cria janelas
     X_train, y_train = create_windows(data_with_outliers, p)
@@ -588,9 +589,7 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
     X = np.array(X)
     y_target = np.array(y_target)
 
-    # --- Injeção de outliers e correção (reutiliza função anterior) ---
-    from core.metrics import inject_outliers, linear_model_fit
-
+    # --- Injeção de outliers e correção (reutiliza função anterior) --
     y_noisy = inject_outliers(y_target.copy(), x=outlier_density, k=k, z=z)
 
     # Encontra outliers via z-score
@@ -598,7 +597,7 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
     mask_outliers = np.abs(z_scores) > k
 
     # Ajuste modelo linear
-    beta = linear_model_fit(X, y_noisy)
+    beta = linear_model(X, y_noisy)
     y_pred = X @ beta[1:] + beta[0]
 
     # Substitui outliers pelos valores previstos
@@ -630,22 +629,24 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
 
     return beta, y_corrected, error
 
-def compute_acc_modulus_all(data_array):
+def compute_modulus_all(data_array, sensor='acc'):
     """
     Calcula o módulo da aceleração (√(x²+y²+z²)) para todas as pessoas e sensores.
     Retorna um único array concatenado com todos os módulos.
     """
+    sensor_cols = {
+        'acc': [1, 2, 3],
+        'gyro': [4, 5, 6],
+        'mag': [7, 8, 9]
+    }
+    cols = sensor_cols[sensor]
     all_mods = []
 
     for person_data in data_array:  # percorre todas as pessoas
         for sensor_data in person_data:  # percorre todos os sensores dessa pessoa
-            acc = sensor_data[:, 1:4]  # colunas X, Y, Z do acelerómetro
-            mod = np.linalg.norm(acc, axis=1)
+            vector = sensor_data[:, cols]  # colunas X, Y, Z do acelerómetro
+            mod = np.linalg.norm(vector, axis=1)
             all_mods.append(mod)
-
-    # Garante que todos têm o mesmo tamanho (opcional)
-    min_len = min(len(m) for m in all_mods)
-    all_mods = np.array([m[:min_len] for m in all_mods])
 
     # Junta todos os módulos de todos os sensores/pessoas
     combined_mod = np.concatenate(all_mods)
