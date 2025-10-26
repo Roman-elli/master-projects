@@ -1,0 +1,21 @@
+K-Means Outliers (ACC - Chest)
+Clusters (k): 16
+Total: 763048 amostras
+Outliers: 10289 (1.35%)
+
+Cluster 0: 1090/81905 (1.33%)
+Cluster 1: 275/96722 (0.28%)
+Cluster 2: 414/31953 (1.30%)
+Cluster 3: 614/55576 (1.10%)
+Cluster 4: 283/28140 (1.01%)
+Cluster 5: 184/8044 (2.29%)
+Cluster 6: 317/17331 (1.83%)
+Cluster 7: 1644/119876 (1.37%)
+Cluster 8: 240/20204 (1.19%)
+Cluster 9: 404/29658 (1.36%)
+Cluster 10: 1825/87759 (2.08%)
+Cluster 11: 781/55250 (1.41%)
+Cluster 12: 158/12833 (1.23%)
+Cluster 13: 598/38471 (1.55%)
+Cluster 14: 1389/74600 (1.86%)
+Cluster 15: 73/4726 (1.54%)

@@ -1,0 +1,21 @@
+K-Means Outliers (GYRO - Left Lower Leg)
+Clusters (k): 16
+Total: 794227 amostras
+Outliers: 15616 (1.97%)
+
+Cluster 0: 187/10681 (1.75%)
+Cluster 1: 88/15780 (0.56%)
+Cluster 2: 596/34504 (1.73%)
+Cluster 3: 325/28896 (1.12%)
+Cluster 4: 481/30819 (1.56%)
+Cluster 5: 26/4420 (0.59%)
+Cluster 6: 80/7193 (1.11%)
+Cluster 7: 116/17869 (0.65%)
+Cluster 8: 164/11561 (1.42%)
+Cluster 9: 55/6510 (0.84%)
+Cluster 10: 881/114764 (0.77%)
+Cluster 11: 99/15971 (0.62%)
+Cluster 12: 61/14347 (0.43%)
+Cluster 13: 159/13093 (1.21%)
+Cluster 14: 227/19334 (1.17%)
+Cluster 15: 12071/448485 (2.69%)

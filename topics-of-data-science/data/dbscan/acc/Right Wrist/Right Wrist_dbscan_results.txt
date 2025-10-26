@@ -1,0 +1,5 @@
+DBSCAN (ACC - Right Wrist)
+eps=0.5, min_samples=10
+Clusters encontrados: 18
+Total de amostras: 50000
+Outliers: 2330 (4.66%)

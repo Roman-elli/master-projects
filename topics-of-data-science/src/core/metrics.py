@@ -251,96 +251,89 @@ def k_mean(data_array, sensor='acc', n_clusters=3, max_iter=100, tol=1e-4, save_
             plt.savefig(file_path, dpi=200)
             plt.close(fig)  # fecha o plot para não ocupar memória
             
-def kmeans_outliers(data_array, sensor, n_clusters, save_dir="data/kmean_outliers", save_plots=True):   
-    os.makedirs(save_dir, exist_ok=True)
-
-    # --- 1️⃣ Extrair colunas do sensor (X, Y, Z) ---
+def kmeans_outliers(data_array, sensor='acc', n_clusters=3, save_dir="data/kmean_outliers", save_plots=True):
+    sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
     sensor_cols = {
         'acc': [1, 2, 3],
         'gyro': [4, 5, 6],
         'mag': [7, 8, 9]
     }
     cols = sensor_cols[sensor]
+    n_medidores = len(data_array[0])
 
-    all_xyz = []
-    for person in data_array:
-        for med in person:
-            data_sensor = med
+    for med_idx in range(n_medidores):
+        sensor_name = sensor_position[med_idx]
+        all_xyz = []
+
+        for person in data_array:
+            data_sensor = person[med_idx]
             x = data_sensor[:, cols[0]]
             y = data_sensor[:, cols[1]]
             z = data_sensor[:, cols[2]]
             xyz = np.column_stack((x, y, z))
             all_xyz.append(xyz)
-    X = np.vstack(all_xyz)
 
-    print(f"Executando K-Means manual ({sensor.upper()}) com k={n_clusters} ...")
+        X = np.vstack(all_xyz)
+        labels, centroids = manual_kmeans(X, n_clusters=n_clusters, max_iter=100, tol=1e-4)
 
-    # --- 2️⃣ Executar K-Means manual ---
-    labels, centroids = manual_kmeans(X, n_clusters=n_clusters, max_iter=100, tol=1e-4)
+        # Calcula distâncias e outliers
+        distances = np.linalg.norm(X - centroids[labels], axis=1)
+        outliers = np.zeros(len(X), dtype=bool)
+        k = 3  # limiar z-score
 
-    # --- 3️⃣ Calcular distâncias e identificar outliers ---
-    distances = np.linalg.norm(X - centroids[labels], axis=1)
-    outliers = np.zeros(len(X), dtype=bool)
-    k = 3  # limite Z-score padrão
-
-    for c in np.unique(labels):
-        mask = labels == c
-        cluster_dist = distances[mask]
-        mean = np.mean(cluster_dist)
-        std = np.std(cluster_dist)
-        z = (cluster_dist - mean) / std
-        outliers[mask] = np.abs(z) > k
-
-    total_outliers = np.sum(outliers)
-    perc = total_outliers / len(X) * 100
-    print(f"Total de outliers (K-Means): {perc:.2f}% ({total_outliers}/{len(X)})")
-
-    # --- 4️⃣ Guardar resultados num ficheiro ---
-    out_file = os.path.join(save_dir, f"{sensor}_outliers_kmeans.txt")
-    with open(out_file, "w") as f:
-        f.write(f"K-Means Outliers ({sensor.upper()})\n")
-        f.write(f"Clusters (k): {n_clusters}\n")
-        f.write(f"Total: {len(X)} amostras\n")
-        f.write(f"Outliers: {total_outliers} ({perc:.2f}%)\n\n")
         for c in np.unique(labels):
-            cluster_mask = labels == c
-            cluster_outliers = np.sum(outliers[cluster_mask])
-            total_cluster = np.sum(cluster_mask)
-            f.write(f"Cluster {c}: {cluster_outliers}/{total_cluster} ({(cluster_outliers/total_cluster)*100:.2f}%)\n")
+            mask = labels == c
+            cluster_dist = distances[mask]
+            mean = np.mean(cluster_dist)
+            std = np.std(cluster_dist)
+            z = (cluster_dist - mean) / std
+            outliers[mask] = np.abs(z) > k
 
-    # --- 5️⃣ Plot 3D (se pedido) ---
-    if save_plots:
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection='3d')
+        total_outliers = np.sum(outliers)
+        perc = total_outliers / len(X) * 100
+        
+        # Salva resultados
+        folder_path = os.path.join(save_dir, sensor, sensor_name, f"k={n_clusters}")
+        os.makedirs(folder_path, exist_ok=True)
 
-        # pontos normais
-        ax.scatter(X[~outliers, 0], X[~outliers, 1], X[~outliers, 2],
-                   c=labels[~outliers], cmap='tab10', s=8, alpha=0.6)
+        txt_path = os.path.join(folder_path, f"{sensor_name}_outliers_k={n_clusters}.txt")
+        with open(txt_path, "w") as f:
+            f.write(f"K-Means Outliers ({sensor.upper()} - {sensor_name})\n")
+            f.write(f"Clusters (k): {n_clusters}\n")
+            f.write(f"Total: {len(X)} amostras\n")
+            f.write(f"Outliers: {total_outliers} ({perc:.2f}%)\n\n")
+            for c in np.unique(labels):
+                cluster_mask = labels == c
+                cluster_outliers = np.sum(outliers[cluster_mask])
+                total_cluster = np.sum(cluster_mask)
+                f.write(f"Cluster {c}: {cluster_outliers}/{total_cluster} "
+                        f"({(cluster_outliers/total_cluster)*100:.2f}%)\n")
 
-        # outliers
-        ax.scatter(X[outliers, 0], X[outliers, 1], X[outliers, 2],
-                   c='red', s=25, label='Outliers', alpha=0.8)
+        if save_plots:
+            fig = plt.figure(figsize=(10, 8))
+            ax = fig.add_subplot(111, projection='3d')
 
-        # centróides
-        ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2],
-                   c='black', s=100, marker='X', label='Centroids')
+            ax.scatter(X[~outliers, 0], X[~outliers, 1], X[~outliers, 2],
+                       c=labels[~outliers], cmap='tab10', s=8, alpha=0.6)
+            ax.scatter(X[outliers, 0], X[outliers, 1], X[outliers, 2],
+                       c='red', s=25, label='Outliers', alpha=0.8)
+            ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2],
+                       c='black', s=100, marker='X', label='Centroids')
 
-        ax.set_title(f"{sensor.upper()} | K-Means Outliers (k={n_clusters})")
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
-        ax.legend()
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_dir, f"{sensor}_kmeans_outliers_k={n_clusters}.png"), dpi=200)
-        plt.close()
+            ax.set_title(f"{sensor.upper()} | {sensor_name} | K-Means Outliers (k={n_clusters})")
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+            ax.legend()
 
-    return outliers
+            img_path = os.path.join(folder_path, f"{sensor_name}_k={n_clusters}.png")
+            plt.tight_layout()
+            plt.savefig(img_path, dpi=200)
+            plt.close(fig)
 
 def dbscan_outliers(data_array, sensor='mag', eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True):
-
-    os.makedirs(save_dir, exist_ok=True)
-
-    # --- 1️⃣ Extrair colunas X,Y,Z do sensor ---
+    
+    sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
     sensor_cols = {
         'acc': [1, 2, 3],
         'gyro': [4, 5, 6],
@@ -348,105 +341,92 @@ def dbscan_outliers(data_array, sensor='mag', eps=0.5, min_samples=10, save_dir=
     }
     cols = sensor_cols[sensor]
 
-    all_xyz = []
-    for person in data_array:
-        for med in person:
-            data_sensor = med
+    n_medidores = len(data_array[0])
+
+    for med_idx in range(n_medidores):
+        sensor_name = sensor_position[med_idx]
+        all_xyz = []
+
+        # junta dados de todas as pessoas para esse sensor
+        for person in data_array:
+            data_sensor = person[med_idx]
             x = data_sensor[:, cols[0]]
             y = data_sensor[:, cols[1]]
             z = data_sensor[:, cols[2]]
             xyz = np.column_stack((x, y, z))
             all_xyz.append(xyz)
-    X = np.vstack(all_xyz)
 
-    print(f"Executando DBSCAN ({sensor.upper()}) com eps={eps}, min_samples={min_samples} ...")
-    # Antes do DBSCAN:
-    if len(X) > 50000:
-        print(f"Dataset muito grande ({len(X)} pontos). Amostrando 50.000 para DBSCAN...")
-        idx = np.random.choice(len(X), 50000, replace=False)
-        X = X[idx]
+        X = np.vstack(all_xyz)
 
-    # --- 2️⃣ Aplicar DBSCAN ---
-    db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
-    labels = db.labels_
+        # Amostra se for muito grande
+        if len(X) > 50000:
+            idx = np.random.choice(len(X), 50000, replace=False)
+            X = X[idx]
 
-    # --- 3️⃣ Identificar outliers ---
-    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    n_outliers = np.sum(labels == -1)
-    perc_out = (n_outliers / len(X)) * 100
+        # Aplica DBSCAN
+        db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
+        labels = db.labels_
 
-    print(f"Clusters encontrados: {n_clusters}")
-    print(f"Outliers (DBSCAN): {perc_out:.2f}% ({n_outliers}/{len(X)})")
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        n_outliers = np.sum(labels == -1)
+        perc_out = (n_outliers / len(X)) * 100
 
-    # --- 4️⃣ Guardar resultados ---
-    out_file = os.path.join(save_dir, f"{sensor}_dbscan_results.txt")
-    with open(out_file, "w") as f:
-        f.write(f"DBSCAN ({sensor.upper()})\n")
-        f.write(f"eps={eps}, min_samples={min_samples}\n")
-        f.write(f"Clusters encontrados: {n_clusters}\n")
-        f.write(f"Total de amostras: {len(X)}\n")
-        f.write(f"Outliers: {n_outliers} ({perc_out:.2f}%)\n")
+        # Caminho para guardar resultados
+        folder_path = os.path.join(save_dir, sensor, sensor_name)
+        os.makedirs(folder_path, exist_ok=True)
 
-    # --- 5️⃣ Plot 3D ---
-    if save_plots:
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection='3d')
+        # Guarda resumo em txt
+        out_file = os.path.join(folder_path, f"{sensor_name}_dbscan_results.txt")
+        with open(out_file, "w") as f:
+            f.write(f"DBSCAN ({sensor.upper()} - {sensor_name})\n")
+            f.write(f"eps={eps}, min_samples={min_samples}\n")
+            f.write(f"Clusters encontrados: {n_clusters}\n")
+            f.write(f"Total de amostras: {len(X)}\n")
+            f.write(f"Outliers: {n_outliers} ({perc_out:.2f}%)\n")
 
-        # Cores para clusters
-        unique_labels = set(labels)
-        colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
+        if save_plots:
+            fig = plt.figure(figsize=(10, 8))
+            ax = fig.add_subplot(111, projection='3d')
 
-        for label, color in zip(unique_labels, colors):
-            mask = labels == label
-            if label == -1:
-                color = 'red'  # outliers
-                label_name = 'Outliers'
-            else:
-                label_name = f'Cluster {label}'
-            ax.scatter(X[mask, 0], X[mask, 1], X[mask, 2],
-                       c=color, s=8, alpha=0.6, label=label_name)
+            unique_labels = set(labels)
+            colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
 
-        ax.set_title(f"{sensor.upper()} | DBSCAN Clusters & Outliers")
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
-        ax.legend()
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_dir, f"{sensor}_dbscan_outliers.png"), dpi=200)
-        plt.close()
+            for label, color in zip(unique_labels, colors):
+                mask = labels == label
+                if label == -1:
+                    color = 'red'
+                    label_name = 'Outliers'
+                else:
+                    label_name = f'Cluster {label}'
+                ax.scatter(X[mask, 0], X[mask, 1], X[mask, 2],
+                           c=[color], s=8, alpha=0.6, label=label_name)
 
-    return labels
+            ax.set_title(f"{sensor.upper()} | {sensor_name} | DBSCAN Clusters & Outliers")
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+            ax.legend(loc='best')
+            plt.tight_layout()
 
+            plot_path = os.path.join(folder_path, f"{sensor_name}_dbscan_outliers.png")
+            plt.savefig(plot_path, dpi=200)
+            plt.close()
 
 def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
-    """
-    Injeta outliers em um array 1D para garantir densidade >= x%.
-    
-    Parâmetros:
-    - array: np.array 1D (valores originais)
-    - x: densidade mínima de outliers (%) desejada
-    - k: limite do z-score
-    - z: amplitude máxima adicional do outlier
-    - random_seed: para reprodutibilidade
-    """
     np.random.seed(random_seed)
     array = array.copy()
     
-    # 1️⃣ calcular média e desvio
     mu = np.mean(array)
     sigma = np.std(array)
     
-    # 2️⃣ identificar outliers existentes
     z_scores = (array - mu) / sigma
     existing_outliers = np.abs(z_scores) > k
     n_outliers = np.sum(existing_outliers)
     n_total = len(array)
-    
-    # densidade atual
+  
     d = (n_outliers / n_total) * 100
     print(f"Densidade atual de outliers: {d:.2f}%")
     
-    # 3️⃣ se d < x, sortear pontos para se tornarem outliers
     if d < x:
         # quantidade de pontos a transformar
         n_needed = int(np.ceil((x - d)/100 * n_total))
@@ -467,22 +447,10 @@ def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
     return array
 
 def linear_model(X_train, y_train):
-    """
-    Determina o modelo linear de ordem p usando mínimos quadrados.
 
-    Parâmetros:
-    - X_train: np.array de forma (n_samples, p), dados de entrada
-    - y_train: np.array de forma (n_samples,), saídas correspondentes
-
-    Retorna:
-    - beta: np.array de forma (p+1,), vetor de pesos incluindo o intercepto
-    """
-    # 1️⃣ Adiciona coluna de 1s para o intercepto
     n_samples = X_train.shape[0]
     X_aug = np.hstack((np.ones((n_samples, 1)), X_train))  # (n_samples, p+1)
 
-    # 2️⃣ Calcula beta pelos mínimos quadrados
-    # beta = (X^T X)^-1 X^T y
     XtX = X_aug.T @ X_aug
     Xty = X_aug.T @ y_train
     beta = np.linalg.inv(XtX) @ Xty
@@ -490,11 +458,6 @@ def linear_model(X_train, y_train):
     return beta
 
 def create_windows(data, p):
-    """
-    Cria matriz X (janela) e vetor y para modelo linear de ordem p.
-    data: array 1D com módulo da aceleração
-    p: número de valores anteriores a usar
-    """
     X = []
     y = []
     for i in range(p, len(data)):
@@ -502,38 +465,23 @@ def create_windows(data, p):
         y.append(data[i])      # valor atual
     return np.array(X), np.array(y)
 
-
 def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, plot_examples=True):
-    """
-    Pipeline completo 3.10:
-    1. Injeta outliers no módulo da aceleração
-    2. Treina modelo linear de ordem p
-    3. Substitui outliers pelos valores previstos
-    4. Analisa erro de predição
-    """
-    # 1️⃣ Injeta 10% de outliers
     data_with_outliers = inject_outliers(modulo, x=outlier_density, k=k, z=z)
-
-    # 2️⃣ Cria janelas
+    
     X_train, y_train = create_windows(data_with_outliers, p)
 
-    # 3️⃣ Treina modelo linear
     beta = linear_model(X_train, y_train)
 
-    # 4️⃣ Predição
     y_pred = np.hstack((np.ones((X_train.shape[0], 1)), X_train)) @ beta
 
-    # 5️⃣ Detecta outliers
     mu = np.mean(y_train)
     sigma = np.std(y_train)
     z_scores = (y_train - mu) / sigma
     outliers_mask = np.abs(z_scores) > k
 
-    # 6️⃣ Substitui outliers pelos valores previstos
     y_corrected = y_train.copy()
     y_corrected[outliers_mask] = y_pred[outliers_mask]
 
-    # 7️⃣ Analisa erro
     error = y_corrected - y_train
 
     if plot_examples:
@@ -558,21 +506,14 @@ def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, plot_ex
 
     return beta, error, y_corrected
 
-
 def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0, plot_examples=True):
-    """
-    Modelo linear com janela centrada e múltiplos módulos (ex: acc, gyro, mag).
-    data_modules: dicionário com {'acc': array, 'gyro': array, 'mag': array} (módulos)
-    """
     half_p = p // 2
     y = data_modules['acc']  # queremos prever o módulo da aceleração
 
-    # --- Construção da matriz X com janelas centradas ---
     n = len(y)
     X = []
     y_target = []
 
-    # usa as três variáveis como features: acc, gyro, mag
     mod_acc = data_modules['acc']
     mod_gyro = data_modules['gyro']
     mod_mag = data_modules['mag']
@@ -589,26 +530,20 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
     X = np.array(X)
     y_target = np.array(y_target)
 
-    # --- Injeção de outliers e correção (reutiliza função anterior) --
     y_noisy = inject_outliers(y_target.copy(), x=outlier_density, k=k, z=z)
 
-    # Encontra outliers via z-score
     z_scores = (y_noisy - np.mean(y_noisy)) / np.std(y_noisy)
     mask_outliers = np.abs(z_scores) > k
 
-    # Ajuste modelo linear
     beta = linear_model(X, y_noisy)
     y_pred = X @ beta[1:] + beta[0]
 
-    # Substitui outliers pelos valores previstos
     y_corrected = y_noisy.copy()
     y_corrected[mask_outliers] = y_pred[mask_outliers]
 
-    # --- Análise do erro ---
     error = y_target - y_pred
     print(f"Erro médio: {np.mean(np.abs(error)):.4f} | Erro RMS: {np.sqrt(np.mean(error**2)):.4f}")
 
-    # --- Plot ---
     if plot_examples:
         plt.figure(figsize=(12, 6))
         plt.plot(y_target[:500], label="Real")
@@ -630,10 +565,7 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
     return beta, y_corrected, error
 
 def compute_modulus_all(data_array, sensor='acc'):
-    """
-    Calcula o módulo da aceleração (√(x²+y²+z²)) para todas as pessoas e sensores.
-    Retorna um único array concatenado com todos os módulos.
-    """
+
     sensor_cols = {
         'acc': [1, 2, 3],
         'gyro': [4, 5, 6],

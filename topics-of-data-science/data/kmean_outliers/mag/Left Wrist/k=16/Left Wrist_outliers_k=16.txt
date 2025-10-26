@@ -1,0 +1,21 @@
+K-Means Outliers (MAG - Left Wrist)
+Clusters (k): 16
+Total: 794257 amostras
+Outliers: 7451 (0.94%)
+
+Cluster 0: 286/48988 (0.58%)
+Cluster 1: 316/28774 (1.10%)
+Cluster 2: 129/40095 (0.32%)
+Cluster 3: 224/42278 (0.53%)
+Cluster 4: 143/61739 (0.23%)
+Cluster 5: 158/42224 (0.37%)
+Cluster 6: 859/48533 (1.77%)
+Cluster 7: 941/79714 (1.18%)
+Cluster 8: 437/61217 (0.71%)
+Cluster 9: 477/33452 (1.43%)
+Cluster 10: 416/55658 (0.75%)
+Cluster 11: 1007/63839 (1.58%)
+Cluster 12: 690/43977 (1.57%)
+Cluster 13: 558/55859 (1.00%)
+Cluster 14: 588/50523 (1.16%)
+Cluster 15: 222/37387 (0.59%)

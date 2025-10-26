@@ -1,0 +1,21 @@
+K-Means Outliers (GYRO - Right Wrist)
+Clusters (k): 16
+Total: 781822 amostras
+Outliers: 14134 (1.81%)
+
+Cluster 0: 106/6337 (1.67%)
+Cluster 1: 9703/417792 (2.32%)
+Cluster 2: 439/38340 (1.15%)
+Cluster 3: 351/45728 (0.77%)
+Cluster 4: 239/16317 (1.46%)
+Cluster 5: 267/20757 (1.29%)
+Cluster 6: 280/19973 (1.40%)
+Cluster 7: 593/44906 (1.32%)
+Cluster 8: 210/13729 (1.53%)
+Cluster 9: 249/17407 (1.43%)
+Cluster 10: 247/17496 (1.41%)
+Cluster 11: 330/40315 (0.82%)
+Cluster 12: 188/14094 (1.33%)
+Cluster 13: 543/31972 (1.70%)
+Cluster 14: 210/13434 (1.56%)
+Cluster 15: 179/23225 (0.77%)

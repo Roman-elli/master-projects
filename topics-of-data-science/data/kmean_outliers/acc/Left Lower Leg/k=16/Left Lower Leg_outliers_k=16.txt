@@ -1,0 +1,21 @@
+K-Means Outliers (ACC - Left Lower Leg)
+Clusters (k): 16
+Total: 794227 amostras
+Outliers: 13301 (1.67%)
+
+Cluster 0: 184/13833 (1.33%)
+Cluster 1: 1545/84155 (1.84%)
+Cluster 2: 203/10182 (1.99%)
+Cluster 3: 508/39275 (1.29%)
+Cluster 4: 1231/65044 (1.89%)
+Cluster 5: 336/22472 (1.50%)
+Cluster 6: 181/15262 (1.19%)
+Cluster 7: 4367/266473 (1.64%)
+Cluster 8: 53/2315 (2.29%)
+Cluster 9: 34/2541 (1.34%)
+Cluster 10: 312/42722 (0.73%)
+Cluster 11: 2369/143094 (1.66%)
+Cluster 12: 164/7076 (2.32%)
+Cluster 13: 674/34704 (1.94%)
+Cluster 14: 84/4878 (1.72%)
+Cluster 15: 1056/40201 (2.63%)

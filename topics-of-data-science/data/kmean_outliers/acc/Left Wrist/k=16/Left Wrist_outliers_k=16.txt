@@ -1,0 +1,21 @@
+K-Means Outliers (ACC - Left Wrist)
+Clusters (k): 16
+Total: 794257 amostras
+Outliers: 9013 (1.13%)
+
+Cluster 0: 590/38690 (1.52%)
+Cluster 1: 280/20819 (1.34%)
+Cluster 2: 333/40615 (0.82%)
+Cluster 3: 875/104759 (0.84%)
+Cluster 4: 432/76218 (0.57%)
+Cluster 5: 557/33878 (1.64%)
+Cluster 6: 524/32912 (1.59%)
+Cluster 7: 106/64753 (0.16%)
+Cluster 8: 794/49523 (1.60%)
+Cluster 9: 194/9309 (2.08%)
+Cluster 10: 772/51044 (1.51%)
+Cluster 11: 1124/100205 (1.12%)
+Cluster 12: 620/46503 (1.33%)
+Cluster 13: 355/21139 (1.68%)
+Cluster 14: 977/76539 (1.28%)
+Cluster 15: 480/27351 (1.75%)

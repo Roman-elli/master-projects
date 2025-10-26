@@ -1,0 +1,5 @@
+DBSCAN (GYRO - Right Wrist)
+eps=0.5, min_samples=10
+Clusters encontrados: 2
+Total de amostras: 50000
+Outliers: 29517 (59.03%)

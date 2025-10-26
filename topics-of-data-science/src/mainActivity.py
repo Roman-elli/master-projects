@@ -22,12 +22,12 @@ def main():
     #3.6
     #k_mean(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean", save_plots=True)
    
-   #3.7
-    #kmeans_outliers(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean_outliers", save_plots=True)
+    #3.7
+    kmeans_outliers(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean_outliers", save_plots=True)
 
     #3.7.1
-    #dbscan_outliers(data_array, sensor='mag',eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True)
-    
+    dbscan_outliers(data_array, sensor='mag',eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True)
+    '''
     #3.8
     modulo = compute_modulus_all(data_array, sensor="acc")
     
@@ -105,7 +105,7 @@ def main():
             min_rmse = rmse
             best_p = p
 
-    print(f"\nMelhor p encontrado: {best_p} (RMSE={min_rmse:.4f})")
+    print(f"\nMelhor p encontrado: {best_p} (RMSE={min_rmse:.4f})")'''
 
 if __name__ == '__main__':
     main()

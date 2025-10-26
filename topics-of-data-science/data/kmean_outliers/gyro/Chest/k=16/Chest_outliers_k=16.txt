@@ -1,0 +1,21 @@
+K-Means Outliers (GYRO - Chest)
+Clusters (k): 16
+Total: 763048 amostras
+Outliers: 11994 (1.57%)
+
+Cluster 0: 275/18881 (1.46%)
+Cluster 1: 629/44399 (1.42%)
+Cluster 2: 232/14708 (1.58%)
+Cluster 3: 201/11346 (1.77%)
+Cluster 4: 166/8257 (2.01%)
+Cluster 5: 150/7635 (1.96%)
+Cluster 6: 511/48025 (1.06%)
+Cluster 7: 346/39775 (0.87%)
+Cluster 8: 361/37448 (0.96%)
+Cluster 9: 222/18011 (1.23%)
+Cluster 10: 230/21087 (1.09%)
+Cluster 11: 477/30708 (1.55%)
+Cluster 12: 335/24717 (1.36%)
+Cluster 13: 171/10396 (1.64%)
+Cluster 14: 561/45611 (1.23%)
+Cluster 15: 7127/382044 (1.87%)
