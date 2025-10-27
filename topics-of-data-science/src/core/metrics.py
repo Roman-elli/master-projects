@@ -9,14 +9,15 @@ import matplotlib.pyplot as plt
 
 from sklearn.cluster import DBSCAN
 
-def activity_metric(data_array, sensor='acc', save_dir="data/activity", save_plots=True):
-    sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
-    sensor_cols = {
-        'acc': [1, 2, 3],
-        'gyro': [4, 5, 6],
-        'mag': [7, 8, 9]
-    }
+sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
+sensor_cols = {
+    'acc': [1, 2, 3],
+    'gyro': [4, 5, 6],
+    'mag': [7, 8, 9]
+}
 
+
+def activity_metric(data_array, sensor='acc', save_dir="data/activity", save_plots=True):
     cols = sensor_cols[sensor]
     n_medidores = len(data_array[0])
 
@@ -85,7 +86,6 @@ def activity_metric(data_array, sensor='acc', save_dir="data/activity", save_plo
     return results
 
 def zscore_outliers(results, sensor='acc', k=3, use_activities=True, save_dir="data/zscore"):
-    sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
 
     k_folder = os.path.join(save_dir, f"k={k}", "activity" if use_activities else "noActivity")
     os.makedirs(k_folder, exist_ok=True)
@@ -189,14 +189,6 @@ def manual_kmeans(X, n_clusters, max_iter, tol):
     return labels, centroids
 
 def k_mean(data_array, sensor='acc', n_clusters=3, max_iter=100, tol=1e-4, save_dir="data/kmean", save_plots=True):
-
-    sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
-    sensor_cols = {
-        'acc': [1, 2, 3],
-        'gyro': [4, 5, 6],
-        'mag': [7, 8, 9]
-    }
-
     cols = sensor_cols[sensor]
     n_medidores = len(data_array[0])
 
@@ -211,10 +203,10 @@ def k_mean(data_array, sensor='acc', n_clusters=3, max_iter=100, tol=1e-4, save_
             z = data_sensor[:, cols[2]]
             xyz = np.column_stack((x, y, z))
             all_xyz.append(xyz)
-
         all_xyz = np.vstack(all_xyz)
-
+        
         labels, centroids = manual_kmeans(all_xyz, n_clusters, max_iter, tol)
+
 
         fig = plt.figure(figsize=(10, 8))
         ax = fig.add_subplot(111, projection='3d')
@@ -252,19 +244,15 @@ def k_mean(data_array, sensor='acc', n_clusters=3, max_iter=100, tol=1e-4, save_
             plt.close(fig)  # fecha o plot para não ocupar memória
             
 def kmeans_outliers(data_array, sensor='acc', n_clusters=3, save_dir="data/kmean_outliers", save_plots=True):
-    sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
-    sensor_cols = {
-        'acc': [1, 2, 3],
-        'gyro': [4, 5, 6],
-        'mag': [7, 8, 9]
-    }
     cols = sensor_cols[sensor]
     n_medidores = len(data_array[0])
 
+    #percorre cada posição do sensor
     for med_idx in range(n_medidores):
         sensor_name = sensor_position[med_idx]
         all_xyz = []
 
+        #Junta os dados de todas as pessoas para esse sensor
         for person in data_array:
             data_sensor = person[med_idx]
             x = data_sensor[:, cols[0]]
@@ -276,18 +264,19 @@ def kmeans_outliers(data_array, sensor='acc', n_clusters=3, save_dir="data/kmean
         X = np.vstack(all_xyz)
         labels, centroids = manual_kmeans(X, n_clusters=n_clusters, max_iter=100, tol=1e-4)
 
-        # Calcula distâncias e outliers
+        # Calcula a distância de cada ponto ao centro do cluster ao qual pertence
         distances = np.linalg.norm(X - centroids[labels], axis=1)
         outliers = np.zeros(len(X), dtype=bool)
         k = 3  # limiar z-score
 
+        # Para cada cluster, calcula o z-score das distâncias e marca outliers
         for c in np.unique(labels):
             mask = labels == c
             cluster_dist = distances[mask]
             mean = np.mean(cluster_dist)
             std = np.std(cluster_dist)
             z = (cluster_dist - mean) / std
-            outliers[mask] = np.abs(z) > k
+            outliers[mask] = np.abs(z) > k #pontos distantes são outliers
 
         total_outliers = np.sum(outliers)
         perc = total_outliers / len(X) * 100
@@ -332,13 +321,6 @@ def kmeans_outliers(data_array, sensor='acc', n_clusters=3, save_dir="data/kmean
             plt.close(fig)
 
 def dbscan_outliers(data_array, sensor='mag', eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True):
-    
-    sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
-    sensor_cols = {
-        'acc': [1, 2, 3],
-        'gyro': [4, 5, 6],
-        'mag': [7, 8, 9]
-    }
     cols = sensor_cols[sensor]
 
     n_medidores = len(data_array[0])
@@ -367,15 +349,14 @@ def dbscan_outliers(data_array, sensor='mag', eps=0.5, min_samples=10, save_dir=
         db = DBSCAN(eps=eps, min_samples=min_samples).fit(X)
         labels = db.labels_
 
+        # Conta o número de clusters e de outliers (rotulados como -1)
         n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
         n_outliers = np.sum(labels == -1)
         perc_out = (n_outliers / len(X)) * 100
 
-        # Caminho para guardar resultados
         folder_path = os.path.join(save_dir, sensor, sensor_name)
         os.makedirs(folder_path, exist_ok=True)
 
-        # Guarda resumo em txt
         out_file = os.path.join(folder_path, f"{sensor_name}_dbscan_results.txt")
         with open(out_file, "w") as f:
             f.write(f"DBSCAN ({sensor.upper()} - {sensor_name})\n")
@@ -419,25 +400,33 @@ def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
     mu = np.mean(array)
     sigma = np.std(array)
     
+    # Calcula o z-score de cada ponto (distância em desvios padrão da média)
     z_scores = (array - mu) / sigma
+    
+    # Identifica os pontos que já são outliers (|z| > k)
     existing_outliers = np.abs(z_scores) > k
     n_outliers = np.sum(existing_outliers)
     n_total = len(array)
   
+    # Densidade atual de outliers
     d = (n_outliers / n_total) * 100
     print(f"Densidade atual de outliers: {d:.2f}%")
     
     if d < x:
-        # quantidade de pontos a transformar
+        # quantidade de outliers a ser inseridos
         n_needed = int(np.ceil((x - d)/100 * n_total))
         
-        # índices de pontos não outliers
+        # índices de pontos que ainda não  são outliers
         non_outlier_indices = np.where(~existing_outliers)[0]
+        
+        # Escolhe aleatoriamente quais pontos serão transformados em outliers
         selected_indices = np.random.choice(non_outlier_indices, size=n_needed, replace=False)
         
+        # Para cada ponto selecionado, gera um valor fora da faixa normal
         for idx in selected_indices:
-            s = np.random.choice([-1, 1])
-            q = np.random.uniform(0, z)
+            s = np.random.choice([-1, 1]) #outlier positivo ou negativo
+            q = np.random.uniform(0, z) # fator aleatório pequeno para variar a intensidade
+            # desloca o valor além do limiar definido por k * sigma
             array[idx] = mu + s * (k * sigma + q)
             
         print(f"Injetados {n_needed} outliers para atingir densidade {x}%")
@@ -447,12 +436,15 @@ def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
     return array
 
 def linear_model(X_train, y_train):
-
     n_samples = X_train.shape[0]
-    X_aug = np.hstack((np.ones((n_samples, 1)), X_train))  # (n_samples, p+1)
+    # Adiciona uma coluna de 1 ao início da matriz 
+    X_aug = np.hstack((np.ones((n_samples, 1)), X_train))  # dimensão: (n amostras, p+1)
 
+    # Calcula o produto 
     XtX = X_aug.T @ X_aug
     Xty = X_aug.T @ y_train
+
+    # Resolve analiticamente o modelo linear que melhor se ajusta aos dados
     beta = np.linalg.inv(XtX) @ Xty
 
     return beta
@@ -460,55 +452,94 @@ def linear_model(X_train, y_train):
 def create_windows(data, p):
     X = []
     y = []
+    
+    # Percorre o vetor de dados a partir da posição p
+    # A cada passo, cria uma janela com os p valores anteriores e o valor atual como alvo
     for i in range(p, len(data)):
         X.append(data[i-p:i])  # p valores anteriores
         y.append(data[i])      # valor atual
     return np.array(X), np.array(y)
 
-def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, plot_examples=True):
+def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, save_dir="data/linear_model_correction", save_plots=True):
+    os.makedirs(save_dir, exist_ok=True)
+    #Cria uma copia dos dados e injeta outliers
     data_with_outliers = inject_outliers(modulo, x=outlier_density, k=k, z=z)
-    
+   
+    # Cria as janelas com p valores anteriores
     X_train, y_train = create_windows(data_with_outliers, p)
-
+   
+    # Treina o modelo linear
     beta = linear_model(X_train, y_train)
-
+   
+    # Calcula as previsões do modelo linear
     y_pred = np.hstack((np.ones((X_train.shape[0], 1)), X_train)) @ beta
-
+   
+    # Identifica outliers no vetor y_train com base no z-score
     mu = np.mean(y_train)
     sigma = np.std(y_train)
     z_scores = (y_train - mu) / sigma
     outliers_mask = np.abs(z_scores) > k
 
+    # Substitui os valores outliers pelas previsões do modelo
     y_corrected = y_train.copy()
     y_corrected[outliers_mask] = y_pred[outliers_mask]
 
-    error = y_corrected - y_train
+    # Calcula o erro apenas nos pontos corrigidos
+    error =y_corrected[outliers_mask] - y_train[outliers_mask]
+    rmse = np.sqrt(np.mean(error**2))
 
-    if plot_examples:
+    out_file = os.path.join(save_dir, f"summary_p{p}.txt")
+    with open(out_file, "w") as f:
+        f.write(f"Linear Model Correction\n")
+        f.write(f"p={p}, outlier_density={outlier_density}, k={k}, z={z}\n")
+        f.write(f"Número de amostras: {len(y_train)}\n")
+        f.write(f"RMSE: {rmse:.4f}\n")
+        f.write(f"Nº outliers corrigidos: {np.sum(outliers_mask)}\n")
+
+    # Plots
+    if save_plots:
         # Distribuição do erro
-        plt.figure(figsize=(8,5))
+        fig1 = plt.figure(figsize=(8, 5))
         plt.hist(error, bins=50, alpha=0.7)
         plt.title(f"Distribuição do erro (p={p})")
         plt.xlabel("Erro")
         plt.ylabel("Frequência")
         plt.grid(True)
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f"erro_distribuicao_p{p}.png"), dpi=200)
+        plt.close(fig1)
 
-        # Exemplo valores reais vs previstos
-        plt.figure(figsize=(10,5))
-        plt.plot(y_train[:100], label='Real')
-        plt.plot(y_corrected[:100], label='Predito (outliers corrigidos)', alpha=0.7)
-        plt.title(f"Valores reais vs previstos (p={p}, primeiras 100 amostras)")
+        # Comparação real vs corrigido
+        fig2 = plt.figure(figsize=(10, 5))
+        plt.plot(y_train[:500], label='Real')
+        plt.plot(y_corrected[:500], label='Corrigido', alpha=0.7)
+        plt.title(f"Real vs Corrigido (p={p})")
         plt.xlabel("Amostra")
-        plt.ylabel("Módulo aceleração")
+        plt.ylabel("Módulo Aceleração")
         plt.legend()
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f"real_vs_corrigido1_p{p}.png"), dpi=200)
+        plt.close(fig2)
+        
+        # Comparação Real vs Previsto
+        fig3 = plt.figure(figsize=(10, 5))
+        plt.plot(y_train[:500], label='Real')
+        plt.plot(y_pred[:500], label='Previsto', linestyle='--')
+        plt.title(f"Real vs Previsto (p={p})")
+        plt.xlabel("Amostra")
+        plt.ylabel("Módulo Aceleração")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f"real_vs_previsto1_p{p}.png"), dpi=200)
+        plt.close(fig3)
+
 
     return beta, error, y_corrected
 
-def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0, plot_examples=True):
+def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0, save_dir="data/linear_model_centered_window", save_plots=True):
+    os.makedirs(save_dir, exist_ok=True)   
     half_p = p // 2
-    y = data_modules['acc']  # queremos prever o módulo da aceleração
+    y = data_modules['acc']  # Módulo da aceleração
 
     n = len(y)
     X = []
@@ -518,11 +549,13 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
     mod_gyro = data_modules['gyro']
     mod_mag = data_modules['mag']
 
+    # Cria janelas centradas (valores antes e depois do ponto a prever)
     for i in range(half_p, n - half_p):
         window_acc = mod_acc[i - half_p:i + half_p + 1]
         window_gyro = mod_gyro[i - half_p:i + half_p + 1]
         window_mag = mod_mag[i - half_p:i + half_p + 1]
 
+        # Junta todas as informações numa única janela
         features = np.concatenate([window_acc, window_gyro, window_mag])
         X.append(features)
         y_target.append(y[i])
@@ -530,22 +563,34 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
     X = np.array(X)
     y_target = np.array(y_target)
 
+    # Injeta outliers no sinal alvo
     y_noisy = inject_outliers(y_target.copy(), x=outlier_density, k=k, z=z)
-
     z_scores = (y_noisy - np.mean(y_noisy)) / np.std(y_noisy)
     mask_outliers = np.abs(z_scores) > k
 
+    # Treina o modelo linear com base nas janelas centradas
     beta = linear_model(X, y_noisy)
+    
+    # Gera previsões e substitui os outliers pelos valores previstos
     y_pred = X @ beta[1:] + beta[0]
-
     y_corrected = y_noisy.copy()
     y_corrected[mask_outliers] = y_pred[mask_outliers]
 
     error = y_target - y_pred
-    print(f"Erro médio: {np.mean(np.abs(error)):.4f} | Erro RMS: {np.sqrt(np.mean(error**2)):.4f}")
+    rmse = np.sqrt(np.mean(error**2))
+  
+    out_file = os.path.join(save_dir, f"summary_p{p}.txt")
+    with open(out_file, "w") as f:
+        f.write(f"Linear Model Centered Window\n")
+        f.write(f"p={p}, outlier_density={outlier_density}, k={k}, z={z}\n")
+        f.write(f"Número de amostras: {len(y_target)}\n")
+        f.write(f"RMSE: {rmse:.4f}\n")
+        f.write(f"Nº outliers corrigidos: {np.sum(mask_outliers)}\n")
 
-    if plot_examples:
-        plt.figure(figsize=(12, 6))
+    # Plots
+    if save_plots:
+        # Real vs previsto
+        fig1 = plt.figure(figsize=(12, 6))
         plt.plot(y_target[:500], label="Real")
         plt.plot(y_pred[:500], label="Previsto", linestyle="--")
         plt.title(f"Modelo Linear Centrado (p={p})")
@@ -553,24 +598,22 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
         plt.ylabel("Módulo Aceleração")
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        plt.savefig(os.path.join(save_dir, f"real_vs_previsto_p{p}.png"), dpi=200)
+        plt.close(fig1)
 
-        plt.figure()
+        # Distribuição do erro
+        fig2 = plt.figure(figsize=(8, 5))
         plt.hist(error, bins=50, color='gray', alpha=0.7)
         plt.title(f"Distribuição do Erro (p={p})")
         plt.xlabel("Erro")
         plt.ylabel("Frequência")
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f"erro_distribuicao_p{p}.png"), dpi=200)
+        plt.close(fig2)
 
     return beta, y_corrected, error
 
 def compute_modulus_all(data_array, sensor='acc'):
-
-    sensor_cols = {
-        'acc': [1, 2, 3],
-        'gyro': [4, 5, 6],
-        'mag': [7, 8, 9]
-    }
     cols = sensor_cols[sensor]
     all_mods = []
 

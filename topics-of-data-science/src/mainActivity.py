@@ -23,11 +23,11 @@ def main():
     #k_mean(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean", save_plots=True)
    
     #3.7
-    kmeans_outliers(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean_outliers", save_plots=True)
+    #kmeans_outliers(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean_outliers", save_plots=True)
 
     #3.7.1
-    dbscan_outliers(data_array, sensor='mag',eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True)
-    '''
+    #dbscan_outliers(data_array, sensor='mag',eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True)
+    
     #3.8
     modulo = compute_modulus_all(data_array, sensor="acc")
     
@@ -46,14 +46,7 @@ def main():
     min_rmse = np.inf
 
     for p_test in range(1, 11):
-        beta, error, y_corrected = linear_model_correction(
-            modulo,
-            p=p_test,
-            outlier_density=10,
-            k=3,
-            z=2.0,
-            plot_examples=False  # para não gerar todos os plots
-        )
+        beta, error, y_corrected = linear_model_correction(modulo, p=p_test, outlier_density=10, k=3, z=2.0, save_dir="data/linear_model_centered_window", save_plots=True)
 
         rmse = np.sqrt(np.mean(error**2))
         print(f"p={p_test}, RMSE={rmse:.4f}")
@@ -64,14 +57,7 @@ def main():
     print(f"Melhor p: {best_p} (RMSE={min_rmse:.4f})")
 
     # Plot final com melhor p
-    beta, error, y_corrected = linear_model_correction(
-        modulo,
-        p=best_p,
-        outlier_density=10,
-        k=3,
-        z=2.0,
-        plot_examples=True
-    )
+    beta, error, y_corrected = linear_model_correction(modulo, p=best_p, outlier_density=10, k=3, z=2.0, save_dir="data/linear_model_centered_window", save_plots=True)
 
     #3.11
     # Extrai módulos de cada variável (todas as pessoas e sensores)
@@ -87,16 +73,7 @@ def main():
     min_rmse = np.inf
 
     for p in [5, 9, 15]:
-        print(f"\nExecutando modelo linear centrado com p={p} ...")
-
-        beta, y_corr, err = linear_model_centered_window(
-            data_modules,
-            p=p,
-            outlier_density=10,
-            k=3,
-            z=2.0,
-            plot_examples=True
-        )
+        beta, y_corr, err = linear_model_centered_window(data_modules, p=p, outlier_density=10, k=3, z=2.0, save_dir="data/linear_model_centered_window", save_plots=True)
 
         rmse = np.sqrt(np.mean(err ** 2))
         print(f"p={p}, RMSE={rmse:.4f}")
@@ -105,7 +82,7 @@ def main():
             min_rmse = rmse
             best_p = p
 
-    print(f"\nMelhor p encontrado: {best_p} (RMSE={min_rmse:.4f})")'''
-
+    print(f"\nMelhor p encontrado: {best_p} (RMSE={min_rmse:.4f})")
+    
 if __name__ == '__main__':
     main()
