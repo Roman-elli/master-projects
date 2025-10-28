@@ -3,10 +3,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
 
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-
 from sklearn.cluster import DBSCAN
 
 sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
@@ -410,7 +406,7 @@ def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
   
     # Densidade atual de outliers
     d = (n_outliers / n_total) * 100
-    print(f"Densidade atual de outliers: {d:.2f}%")
+    #print(f"Densidade atual de outliers: {d:.2f}%")
     
     if d < x:
         # quantidade de outliers a ser inseridos
@@ -429,9 +425,9 @@ def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
             # desloca o valor além do limiar definido por k * sigma
             array[idx] = mu + s * (k * sigma + q)
             
-        print(f"Injetados {n_needed} outliers para atingir densidade {x}%")
-    else:
-        print("Densidade já >= x%, não foi necessário injetar outliers")
+        #print(f"Injetados {n_needed} outliers para atingir densidade {x}%")
+    #else:
+        #print("Densidade já >= x%, não foi necessário injetar outliers")
     
     return array
 
@@ -487,7 +483,7 @@ def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, save_di
     # Calcula o erro apenas nos pontos corrigidos
     error =y_corrected[outliers_mask] - y_train[outliers_mask]
     rmse = np.sqrt(np.mean(error**2))
-
+    '''
     out_file = os.path.join(save_dir, f"summary_p{p}.txt")
     with open(out_file, "w") as f:
         f.write(f"Linear Model Correction\n")
@@ -495,20 +491,9 @@ def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, save_di
         f.write(f"Número de amostras: {len(y_train)}\n")
         f.write(f"RMSE: {rmse:.4f}\n")
         f.write(f"Nº outliers corrigidos: {np.sum(outliers_mask)}\n")
-
+    '''
     # Plots
     if save_plots:
-        # Distribuição do erro
-        fig1 = plt.figure(figsize=(8, 5))
-        plt.hist(error, bins=50, alpha=0.7)
-        plt.title(f"Distribuição do erro (p={p})")
-        plt.xlabel("Erro")
-        plt.ylabel("Frequência")
-        plt.grid(True)
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_dir, f"erro_distribuicao_p{p}.png"), dpi=200)
-        plt.close(fig1)
-
         # Comparação real vs corrigido
         fig2 = plt.figure(figsize=(10, 5))
         plt.plot(y_train[:500], label='Real')

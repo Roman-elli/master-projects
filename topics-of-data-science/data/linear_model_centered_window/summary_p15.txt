@@ -1,5 +1,0 @@
-Linear Model Centered Window
-p=15, outlier_density=10, k=3, z=2.0
-Número de amostras: 3930859
-RMSE: 0.0804
-Nº outliers corrigidos: 36296

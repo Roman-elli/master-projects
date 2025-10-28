@@ -1,0 +1,17 @@
+=== Significância Estatística (ACC - Right Wrist) ===
+Atividade 1: média=10.0153, KS p=0.0000
+Atividade 2: média=10.0679, KS p=0.0000
+Atividade 3: média=10.0626, KS p=0.0000
+Atividade 4: média=10.2795, KS p=0.0000
+Atividade 5: média=10.3214, KS p=0.0000
+Atividade 6: média=10.2809, KS p=0.0000
+Atividade 7: média=10.3022, KS p=0.0000
+Atividade 8: média=10.0651, KS p=0.0000
+Atividade 9: média=10.0412, KS p=0.0000
+Atividade 10: média=10.0610, KS p=0.0000
+Atividade 11: média=10.0339, KS p=0.0000
+Atividade 12: média=10.1691, KS p=0.0000
+Atividade 13: média=10.0158, KS p=0.0000
+Atividade 14: média=10.2216, KS p=0.0000
+Atividade 15: média=10.2934, KS p=0.0000
+Atividade 16: média=10.3171, KS p=0.0000

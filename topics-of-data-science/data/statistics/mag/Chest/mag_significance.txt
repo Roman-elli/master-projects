@@ -1,0 +1,17 @@
+=== Significância Estatística (MAG - Chest) ===
+Atividade 1: média=1.0773, KS p=0.0000
+Atividade 2: média=1.2563, KS p=0.0000
+Atividade 3: média=1.2367, KS p=0.0000
+Atividade 4: média=1.0341, KS p=0.0000
+Atividade 5: média=1.0277, KS p=0.0000
+Atividade 6: média=1.1426, KS p=0.0000
+Atividade 7: média=1.1386, KS p=0.0000
+Atividade 8: média=1.2399, KS p=0.0000
+Atividade 9: média=1.1928, KS p=0.0000
+Atividade 10: média=1.2119, KS p=0.0000
+Atividade 11: média=1.1822, KS p=0.0000
+Atividade 12: média=1.0643, KS p=0.0000
+Atividade 13: média=1.0057, KS p=0.0000
+Atividade 14: média=1.0642, KS p=0.0000
+Atividade 15: média=0.9564, KS p=0.0000
+Atividade 16: média=0.9735, KS p=0.0000

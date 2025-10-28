@@ -1,0 +1,17 @@
+=== Significância Estatística (GYRO - Left Lower Leg) ===
+Atividade 1: média=1.7717, KS p=0.0000
+Atividade 2: média=1.0881, KS p=0.0000
+Atividade 3: média=1.1760, KS p=0.0000
+Atividade 4: média=117.5676, KS p=0.0000
+Atividade 5: média=110.8664, KS p=0.0000
+Atividade 6: média=118.0781, KS p=0.0000
+Atividade 7: média=114.2249, KS p=0.0000
+Atividade 8: média=8.2151, KS p=0.0000
+Atividade 9: média=6.5509, KS p=0.0000
+Atividade 10: média=6.4403, KS p=0.0000
+Atividade 11: média=6.6797, KS p=0.0000
+Atividade 12: média=78.4277, KS p=0.0000
+Atividade 13: média=1.6743, KS p=0.0000
+Atividade 14: média=73.9467, KS p=0.0000
+Atividade 15: média=116.9979, KS p=0.0000
+Atividade 16: média=124.0433, KS p=0.0000

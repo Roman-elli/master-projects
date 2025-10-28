@@ -1,0 +1,17 @@
+=== Significância Estatística (ACC - Chest) ===
+Atividade 1: média=9.9325, KS p=0.0000
+Atividade 2: média=9.9309, KS p=0.0000
+Atividade 3: média=9.9307, KS p=0.0000
+Atividade 4: média=10.0101, KS p=0.0000
+Atividade 5: média=9.9946, KS p=0.0000
+Atividade 6: média=9.9969, KS p=0.0000
+Atividade 7: média=9.9855, KS p=0.0000
+Atividade 8: média=9.9051, KS p=0.0000
+Atividade 9: média=9.9041, KS p=0.0000
+Atividade 10: média=9.9168, KS p=0.0000
+Atividade 11: média=9.8981, KS p=0.0000
+Atividade 12: média=9.9850, KS p=0.0000
+Atividade 13: média=9.9281, KS p=0.0000
+Atividade 14: média=10.0597, KS p=0.0000
+Atividade 15: média=10.0629, KS p=0.0000
+Atividade 16: média=10.0777, KS p=0.0000

@@ -1,5 +1,0 @@
-Linear Model Correction
-p=6, outlier_density=10, k=3, z=2.0
-Número de amostras: 3930867
-RMSE: 8.8544
-Nº outliers corrigidos: 36292

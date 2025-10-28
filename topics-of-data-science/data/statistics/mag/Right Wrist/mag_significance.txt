@@ -1,0 +1,17 @@
+=== Significância Estatística (MAG - Right Wrist) ===
+Atividade 1: média=1.4656, KS p=0.0000
+Atividade 2: média=1.6526, KS p=0.0000
+Atividade 3: média=1.6366, KS p=0.0000
+Atividade 4: média=1.3817, KS p=0.0000
+Atividade 5: média=1.3932, KS p=0.0000
+Atividade 6: média=1.4934, KS p=0.0000
+Atividade 7: média=1.4965, KS p=0.0000
+Atividade 8: média=1.6381, KS p=0.0000
+Atividade 9: média=1.6004, KS p=0.0000
+Atividade 10: média=1.6268, KS p=0.0000
+Atividade 11: média=1.6060, KS p=0.0000
+Atividade 12: média=1.4611, KS p=0.0000
+Atividade 13: média=1.4157, KS p=0.0000
+Atividade 14: média=1.5826, KS p=0.0000
+Atividade 15: média=1.3161, KS p=0.0000
+Atividade 16: média=1.3269, KS p=0.0020

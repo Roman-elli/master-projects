@@ -1,0 +1,17 @@
+=== Significância Estatística (ACC - Right Upper Leg) ===
+Atividade 1: média=9.8806, KS p=0.0000
+Atividade 2: média=10.0028, KS p=0.0000
+Atividade 3: média=10.0039, KS p=0.0000
+Atividade 4: média=10.3354, KS p=0.0000
+Atividade 5: média=10.2916, KS p=0.0000
+Atividade 6: média=10.3734, KS p=0.0000
+Atividade 7: média=10.3436, KS p=0.0000
+Atividade 8: média=10.0076, KS p=0.0000
+Atividade 9: média=9.9040, KS p=0.0000
+Atividade 10: média=10.0052, KS p=0.0000
+Atividade 11: média=9.9198, KS p=0.0000
+Atividade 12: média=10.1268, KS p=0.0000
+Atividade 13: média=9.9008, KS p=0.0000
+Atividade 14: média=10.2363, KS p=0.0000
+Atividade 15: média=10.5762, KS p=0.0000
+Atividade 16: média=10.5197, KS p=0.0000
