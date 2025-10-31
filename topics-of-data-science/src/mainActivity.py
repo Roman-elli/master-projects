@@ -1,6 +1,6 @@
 from utils.io import readFiles
 from core.metrics import activity_metric, zscore_outliers, k_mean, manual_kmeans, kmeans_outliers, dbscan_outliers, inject_outliers, linear_model, create_windows, linear_model_correction, linear_model_centered_window, compute_modulus_all
-from core.features import statistical_significance, advanced_statistical_tests, compute_pca, pca_variance_analysis, top_features, build_feature_matrix, project_features
+from core.features import build_feature_matrix_activity, apply_feature_selection_to_sensor, statistical_significance, apply_pca_to_activity
 import config as cfg
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,26 +11,26 @@ def main():
     data_array = readFiles(cfg.ASSETS_FOLDERS_PATH)
 
     # 3.1 & 3.2
-    # results_acc = activity_metric(data_array, 'acc', save_dir="data/activity", save_plots=False)
-    # results_gyro = activity_metric(data_array, 'gyro', save_dir="data/activity", save_plots=False)
-    # results_mag = activity_metric(data_array, 'mag', save_dir="data/activity", save_plots=False)
+    results_acc = activity_metric(data_array, 'acc', save_dir="data/activity", save_plots=False)
+    results_gyro = activity_metric(data_array, 'gyro', save_dir="data/activity", save_plots=False)
+    results_mag = activity_metric(data_array, 'mag', save_dir="data/activity", save_plots=False)
 
     # 3.3 & 3.4
-    # useActivitie = False
-    # for k_value in [3, 3.5, 4]:
-    #     zscore_outliers(results_acc, sensor='acc', k=k_value, use_activities=useActivitie, save_dir="data/zscore")
-    #     zscore_outliers(results_gyro, sensor='gyro', k=k_value, use_activities=useActivitie, save_dir="data/zscore")
-    #     zscore_outliers(results_mag, sensor='mag', k=k_value, use_activities=useActivitie, save_dir="data/zscore")
+    useActivitie = False
+    for k_value in [3, 3.5, 4]:
+        zscore_outliers(results_acc, sensor='acc', k=k_value, use_activities=useActivitie, save_dir="data/zscore")
+        zscore_outliers(results_gyro, sensor='gyro', k=k_value, use_activities=useActivitie, save_dir="data/zscore")
+        zscore_outliers(results_mag, sensor='mag', k=k_value, use_activities=useActivitie, save_dir="data/zscore")
     
     #3.6
-    #k_mean(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean", save_plots=True)
+    k_mean(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean", save_plots=True)
    
     #3.7
-    #kmeans_outliers(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean_outliers", save_plots=True)
+    kmeans_outliers(data_array, sensor='mag', n_clusters=cfg.LABELS_COUNTER, save_dir="data/kmean_outliers", save_plots=True)
 
     #3.7.1
-    #dbscan_outliers(data_array, sensor='mag',eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True)
-    '''
+    dbscan_outliers(data_array, sensor='mag',eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True)
+    
     #3.8
     modulo = compute_modulus_all(data_array, sensor="acc")
     
@@ -104,26 +104,37 @@ def main():
             best_p = p
 
     print(f"\nMelhor p encontrado: {best_p} (RMSE={min_rmse:.4f})")
-    '''
-    #4
-    """
-    Pipeline completo de feature extraction e seleção.
-    """
-    body_parts = ["Left Wrist","Right Wrist","Chest","Right Upper Leg","Left Lower Leg"]
-    sensors = ['acc','gyro','mag']
 
-    for sensor in sensors:
-        for idx, part in enumerate(body_parts):
-            X, y, feat_names = build_feature_matrix(data_array, sensor=sensor,
-                                                body_part_idx=idx, body_part_name=part)
-            statistical_significance(data_array, sensor=sensor, body_part_idx=idx, body_part_name=part)
-            advanced_statistical_tests(X, y, feat_names, sensor=sensor, body_part_name=part)
-            X_pca, pca_model = compute_pca(X, sensor=sensor, body_part_name=part)
-            n_feats = pca_variance_analysis(pca_model)
-            X_proj = project_features(X_pca, n_feats)
-            idx_top, scores_top = top_features(X_proj, y, method='fisher', top_k=10)
-            print(f"[{sensor} | {part}] Top 10 features PCA+Fisher: {idx_top}")
+    #4
+    calculate_PCA_and_top10 = True
     
+    if calculate_PCA_and_top10:
+        for sensor in cfg.SENSORS:
+            for part in cfg.BODY_PARTS_PATH:
+                for act_id in cfg.ACTIVITIES:
+                    apply_pca_to_activity(sensor, part, act_id)
+            print(f"\n=== Seleção de features -> Sensor: {sensor.upper()} ===")
+            fisher_all, relief_all = apply_feature_selection_to_sensor(sensor, cfg.BODY_PARTS_PATH, top_k=20)
+    else:
+        data_array = readFiles(cfg.ASSETS_FOLDERS_PATH)
+
+        for sensor in cfg.SENSORS:
+            for idx, part in enumerate(cfg.BODY_PARTS):
+                # Estatísticas gerais por sensor/parce (todas atividades)
+                statistical_significance(data_array, sensor=sensor, body_part_idx=idx, body_part_name=part)
+
+                for act_id in cfg.ACTIVITIES:
+                    print(f"\n=== {sensor.upper()} | {part} | Atividade {act_id} ===")
+                    X, feat_names = build_feature_matrix_activity(data_array, activity_id=act_id, sensor=sensor, fs=cfg.FS, window_ms=cfg.WINDOW_SIZE, overlap=cfg.OVERLAP, body_part_idx=idx, body_part_name=part)
+                    
+                    # salvar CSV
+                    save_dir = os.path.join("data", "features", sensor, part.replace(" ", "_"), f"act_{act_id}")
+                    os.makedirs(save_dir, exist_ok=True)
+                    save_path = os.path.join(save_dir, "features.csv")
+
+                    np.savetxt(save_path, X, delimiter=';', header=';'.join(feat_names), comments='', fmt='%.6f')
+                    print(f"[OK] {sensor} | {part} | Atividade {act_id}: {len(X)} janelas salvas em {save_path}")
+
     
 if __name__ == '__main__':
     main()

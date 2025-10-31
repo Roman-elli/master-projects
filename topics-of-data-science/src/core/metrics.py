@@ -1,34 +1,27 @@
 import matplotlib.pyplot as plt
+import config as cfg
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
 
 from sklearn.cluster import DBSCAN
 
-sensor_position = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
-sensor_cols = {
-    'acc': [1, 2, 3],
-    'gyro': [4, 5, 6],
-    'mag': [7, 8, 9]
-}
-
-
 def activity_metric(data_array, sensor='acc', save_dir="data/activity", save_plots=True):
-    cols = sensor_cols[sensor]
-    n_medidores = len(data_array[0])
+    cols = cfg.SENSOR_COLS[sensor] # colunas correspondentes ao sensor selecionado
+    n_sensors = len(data_array[0]) # nº de sensores por pessoa
 
     os.makedirs(save_dir, exist_ok=True)
     outlier_file = os.path.join(save_dir, f"{sensor}_outliers.txt")
 
     with open(outlier_file, "w") as f:
         results = []
-
-        for med_idx in range(n_medidores):
+        # Loop sobre cada sensor 
+        for sen_idx in range(n_sensors):
             all_modules = []
             all_activities = []
-
+            # Loop sobre cada pessoa
             for person in data_array:
-                activity = person[med_idx]
+                activity = person[sen_idx]
                 x = activity[:, cols[0]]
                 y = activity[:, cols[1]]
                 z = activity[:, cols[2]]
@@ -42,22 +35,25 @@ def activity_metric(data_array, sensor='acc', save_dir="data/activity", save_plo
             all_activities = np.array(all_activities)
             results.append((all_modules, all_activities))
 
-            unique_activities = np.unique(all_activities)
-            data_activities = [all_modules[all_activities == a] for a in unique_activities]
+            unique_activities = np.unique(all_activities) # Identifica as atividades únicas
+            data_activities = [all_modules[all_activities == a] for a in unique_activities] # Separa os modulos por atividade
 
-            f.write(f"Outliers density for {sensor} | {sensor_position[med_idx]}:\n")
-            print(f"Outliers density for {sensor} | {sensor_position[med_idx]}:")
+            f.write(f"Outliers density for {sensor} | {cfg.BODY_PARTS[sen_idx]}:\n")
+            print(f"Outliers density for {sensor} | {cfg.BODY_PARTS[sen_idx]}:")
 
+            # Loop por cada atividade
             for a in unique_activities:
-                activity_data = all_modules[all_activities == a]
-                n_r = len(activity_data)
+                activity_data = all_modules[all_activities == a] # Dados da atividade
+                n_r = len(activity_data) # Nº de amostras
+                # Calcula o intervalo interquartil
                 q1 = np.percentile(activity_data, 25)
                 q3 = np.percentile(activity_data, 75)
                 iqr = q3 - q1
+                # Define limites inferior e superior para outliers
                 low_limit = q1 - 1.5 * iqr
                 sup_limit = q3 + 1.5 * iqr
 
-                outliers = np.sum((activity_data < low_limit) | (activity_data > sup_limit))
+                outliers = np.sum((activity_data < low_limit) | (activity_data > sup_limit)) # Quantos outliers estao fora dos limites
                 d = (outliers / n_r) * 100
 
                 line = f"  Activity {a}: {d:.2f}% outliers ({outliers}/{n_r})\n"
@@ -68,15 +64,15 @@ def activity_metric(data_array, sensor='acc', save_dir="data/activity", save_plo
             print("\n---------------------------------------------\n")
 
             if save_plots:
-                plot_folder = os.path.join(save_dir, sensor, sensor_position[med_idx])
+                plot_folder = os.path.join(save_dir, sensor, cfg.BODY_PARTS[sen_idx])
                 os.makedirs(plot_folder, exist_ok=True)
                 plt.figure(figsize=(10, 6))
                 plt.boxplot(data_activities, labels=unique_activities)
                 plt.xlabel("Activity (column 12)")
                 plt.ylabel(f"Vector module ({sensor})")
-                plt.title(f"{sensor.upper()} | {sensor_position[med_idx]}")
+                plt.title(f"{sensor.upper()} | {cfg.BODY_PARTS[sen_idx]}")
                 plt.grid(True, axis='y', linestyle='--', alpha=0.7)
-                plt.savefig(os.path.join(plot_folder, f"{sensor_position[med_idx]}_boxplot.png"))
+                plt.savefig(os.path.join(plot_folder, f"{cfg.BODY_PARTS[sen_idx]}_boxplot.png"))
                 plt.close()
 
     return results
@@ -88,23 +84,25 @@ def zscore_outliers(results, sensor='acc', k=3, use_activities=True, save_dir="d
 
     outlier_file = os.path.join(k_folder, f"{sensor}_outliers.txt")
     with open(outlier_file, "w") as f:
-
-        for med_idx, (modules, activities) in enumerate(results, start=1):
-            sensor_name = sensor_position[med_idx - 1]
+        # Loop por cada sensor 
+        for sen_idx, (modules, activities) in enumerate(results, start=1):
+            sensor_name = cfg.BODY_PARTS[sen_idx - 1]
 
             f.write(f"Outliers density for {sensor.upper()} | {sensor_name} (Z-score method, k={k}):\n")
             print(f"Outliers density for {sensor.upper()} | {sensor_name} (Z-score method, k={k}):")
 
             plt.figure(figsize=(12, 6))
-
+            # Se for para usar atividades separadas
             if use_activities:
                 unique_activities = np.unique(activities)
+                # Analisa cada atividade separadamente
                 for a in unique_activities:
                     dados_atividade = modules[activities == a]
                     mean = np.mean(dados_atividade)
                     std = np.std(dados_atividade)
                     z_scores = (dados_atividade - mean) / std
 
+                    # Cria máscara de outliers |z| > k
                     mask_outliers = np.abs(z_scores) > k
 
                     total = len(dados_atividade)
@@ -122,6 +120,7 @@ def zscore_outliers(results, sensor='acc', k=3, use_activities=True, save_dir="d
                     plt.scatter([a]*len(dados_atividade[mask_outliers]),
                                 dados_atividade[mask_outliers],
                                 color='red', alpha=0.8)
+            # Caso nao use atividades (dados tratados como um todo)
             else:
                 mean = np.mean(modules)
                 std = np.std(modules)
@@ -158,6 +157,7 @@ def manual_kmeans(X, n_clusters, max_iter, tol):
     np.random.seed(42)
     n_samples = X.shape[0]
 
+    # Escolha aleatoria 'n_clusters' pontos do conjunto como centróides iniciais
     indices = np.random.choice(n_samples, n_clusters, replace=False)
     centroids = X[indices]
 
@@ -185,21 +185,22 @@ def manual_kmeans(X, n_clusters, max_iter, tol):
     return labels, centroids
 
 def k_mean(data_array, sensor='acc', n_clusters=3, max_iter=100, tol=1e-4, save_dir="data/kmean", save_plots=True):
-    cols = sensor_cols[sensor]
-    n_medidores = len(data_array[0])
+    cols = cfg.SENSOR_COLS[sensor]
+    n_sensors = len(data_array[0])
 
-    for med_idx in range(n_medidores):
-        sensor_name = sensor_position[med_idx]
+    for sen_idx in range(n_sensors):
+        sensor_name = cfg.BODY_PARTS[sen_idx]
 
         all_xyz = []
+        # Combina os dados de todas as pessoas para esse sensor
         for person in data_array:
-            data_sensor = person[med_idx]
+            data_sensor = person[sen_idx]
             x = data_sensor[:, cols[0]]
             y = data_sensor[:, cols[1]]
             z = data_sensor[:, cols[2]]
             xyz = np.column_stack((x, y, z))
             all_xyz.append(xyz)
-        all_xyz = np.vstack(all_xyz)
+        all_xyz = np.vstack(all_xyz) # União de todos os daods de todas as pessoas numa matriz
         
         labels, centroids = manual_kmeans(all_xyz, n_clusters, max_iter, tol)
 
@@ -217,15 +218,7 @@ def k_mean(data_array, sensor='acc', n_clusters=3, max_iter=100, tol=1e-4, save_
             alpha=0.6
         )
 
-        ax.scatter(
-            centroids[:, 0],
-            centroids[:, 1],
-            centroids[:, 2],
-            c='black',
-            s=100,
-            marker='X',
-            label='Centroids'
-        )
+        ax.scatter(centroids[:, 0], centroids[:, 1], centroids[:, 2], c='black', s=100, marker='X', label='Centroids')
 
         ax.set_title(f"{sensor.upper()} | {sensor_name} | Manual K-Means (k={n_clusters})")
         ax.set_xlabel(f"{sensor.upper()} X")
@@ -237,18 +230,18 @@ def k_mean(data_array, sensor='acc', n_clusters=3, max_iter=100, tol=1e-4, save_
             os.makedirs(folder_path, exist_ok=True)
             file_path = os.path.join(folder_path, f"{sensor_name}_k={n_clusters}.png")
             plt.savefig(file_path, dpi=200)
-            plt.close(fig)  # fecha o plot para não ocupar memória
+            plt.close(fig)  # Fecha o plot para não ocupar memória
             
 def kmeans_outliers(data_array, sensor='acc', n_clusters=3, save_dir="data/kmean_outliers", save_plots=True):
-    cols = sensor_cols[sensor]
-    n_medidores = len(data_array[0])
+    cols = cfg.SENSOR_COLS[sensor]
+    n_sensors = len(data_array[0])
 
-    #percorre cada posição do sensor
-    for med_idx in range(n_medidores):
-        sensor_name = sensor_position[med_idx]
+    # Percorre cada posição do sensor
+    for med_idx in range(n_sensors):
+        sensor_name = cfg.BODY_PARTS[med_idx]
         all_xyz = []
 
-        #Junta os dados de todas as pessoas para esse sensor
+        # Junta os dados de todas as pessoas para esse sensor
         for person in data_array:
             data_sensor = person[med_idx]
             x = data_sensor[:, cols[0]]
@@ -263,7 +256,7 @@ def kmeans_outliers(data_array, sensor='acc', n_clusters=3, save_dir="data/kmean
         # Calcula a distância de cada ponto ao centro do cluster ao qual pertence
         distances = np.linalg.norm(X - centroids[labels], axis=1)
         outliers = np.zeros(len(X), dtype=bool)
-        k = 3  # limiar z-score
+        k = 3  # Limiar z-score
 
         # Para cada cluster, calcula o z-score das distâncias e marca outliers
         for c in np.unique(labels):
@@ -272,7 +265,7 @@ def kmeans_outliers(data_array, sensor='acc', n_clusters=3, save_dir="data/kmean
             mean = np.mean(cluster_dist)
             std = np.std(cluster_dist)
             z = (cluster_dist - mean) / std
-            outliers[mask] = np.abs(z) > k #pontos distantes são outliers
+            outliers[mask] = np.abs(z) > k # Pontos distantes são outliers
 
         total_outliers = np.sum(outliers)
         perc = total_outliers / len(X) * 100
@@ -317,12 +310,12 @@ def kmeans_outliers(data_array, sensor='acc', n_clusters=3, save_dir="data/kmean
             plt.close(fig)
 
 def dbscan_outliers(data_array, sensor='mag', eps=0.5, min_samples=10, save_dir="data/dbscan", save_plots=True):
-    cols = sensor_cols[sensor]
+    cols = cfg.SENSOR_COLS[sensor]
 
-    n_medidores = len(data_array[0])
+    n_sensors = len(data_array[0])
 
-    for med_idx in range(n_medidores):
-        sensor_name = sensor_position[med_idx]
+    for med_idx in range(n_sensors):
+        sensor_name = cfg.BODY_PARTS[med_idx]
         all_xyz = []
 
         # junta dados de todas as pessoas para esse sensor
@@ -412,7 +405,7 @@ def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
         # quantidade de outliers a ser inseridos
         n_needed = int(np.ceil((x - d)/100 * n_total))
         
-        # índices de pontos que ainda não  são outliers
+        # índices de pontos que ainda não são outliers
         non_outlier_indices = np.where(~existing_outliers)[0]
         
         # Escolhe aleatoriamente quais pontos serão transformados em outliers
@@ -420,9 +413,9 @@ def inject_outliers(array, x=5.0, k=3, z=1.0, random_seed=42):
         
         # Para cada ponto selecionado, gera um valor fora da faixa normal
         for idx in selected_indices:
-            s = np.random.choice([-1, 1]) #outlier positivo ou negativo
-            q = np.random.uniform(0, z) # fator aleatório pequeno para variar a intensidade
-            # desloca o valor além do limiar definido por k * sigma
+            s = np.random.choice([-1, 1]) # Outlier positivo ou negativo
+            q = np.random.uniform(0, z) # Fator aleatório pequeno para variar a intensidade
+            # Desloca o valor além do limiar definido por k * sigma
             array[idx] = mu + s * (k * sigma + q)
             
         #print(f"Injetados {n_needed} outliers para atingir densidade {x}%")
@@ -458,7 +451,7 @@ def create_windows(data, p):
 
 def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, save_dir="data/linear_model_correction", save_plots=True):
     os.makedirs(save_dir, exist_ok=True)
-    #Cria uma copia dos dados e injeta outliers
+    # Cria uma copia dos dados e injeta outliers
     data_with_outliers = inject_outliers(modulo, x=outlier_density, k=k, z=z)
    
     # Cria as janelas com p valores anteriores
@@ -481,7 +474,7 @@ def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, save_di
     y_corrected[outliers_mask] = y_pred[outliers_mask]
 
     # Calcula o erro apenas nos pontos corrigidos
-    error =y_corrected[outliers_mask] - y_train[outliers_mask]
+    error = y_corrected[outliers_mask] - y_train[outliers_mask]
     rmse = np.sqrt(np.mean(error**2))
     '''
     out_file = os.path.join(save_dir, f"summary_p{p}.txt")
@@ -599,7 +592,7 @@ def linear_model_centered_window(data_modules, p, outlier_density=10, k=3, z=2.0
     return beta, y_corrected, error
 
 def compute_modulus_all(data_array, sensor='acc'):
-    cols = sensor_cols[sensor]
+    cols = cfg.SENSOR_COLS[sensor]
     all_mods = []
 
     for person_data in data_array:  # percorre todas as pessoas
