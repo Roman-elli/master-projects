@@ -510,7 +510,21 @@ def linear_model_correction(modulo, p=3, outlier_density=10, k=3, z=2.0, save_di
         plt.tight_layout()
         plt.savefig(os.path.join(save_dir, f"real_vs_previsto1_p{p}.png"), dpi=200)
         plt.close(fig3)
+        
+        # Distribuição do erro de predição
+        plt.figure(figsize=(10, 5))
+        plt.hist(error, bins=16, color='royalblue', edgecolor='black', alpha=0.9)
+        plt.title(f"Distribuição do Erro de Predição (p={p})", fontsize=13)
+        plt.xlabel("Erro de Predição", fontsize=12)
+        plt.ylabel("Frequência", fontsize=12)
+        plt.grid(axis='y', linestyle='--', alpha=0.6)
 
+        max_abs = np.max(np.abs(error))
+        plt.xlim(-max_abs, max_abs)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, f"erro_distribuicao_p{p}.png"), dpi=200)
+        plt.show()
 
     return beta, error, y_corrected
 
