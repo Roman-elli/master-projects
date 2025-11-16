@@ -1,5 +1,6 @@
 # Files & folders path
 ASSETS_FOLDERS_PATH = "assets/"
+SPLIT_ASSETS_FOLDERS_PATH = "split_assets/"
 BASE_DATA_PATH = "data/features"
 
 PCA_THRESHOLD = 0.75
