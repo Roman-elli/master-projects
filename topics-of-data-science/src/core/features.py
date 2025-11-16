@@ -499,3 +499,69 @@ def relieff(X, y, k=10):
             scores[f] += diff_miss - diff_hit
     scores /= n_samples
     return scores
+
+
+def fisher_score_single_activity(X):
+    """Versão estável do Fisher Score sem comparação entre classes."""
+    # Fisher = variância total / variância interna aproximada
+    # Aqui usamos o inverso da variância para medir discriminatividade dentro da própria atividade
+    var = np.var(X, axis=0)
+    mean_abs = np.abs(np.mean(X, axis=0))
+    scores = mean_abs / (var + 1e-12)
+    return scores
+
+
+def relieff_single_activity(X, k=10):
+    """ReliefF não supervisionado — mede relevância por variação local."""
+    n_samples, n_features = X.shape
+    scores = np.zeros(n_features)
+    nn = NearestNeighbors(n_neighbors=min(k+1, n_samples)).fit(X)
+    for i in range(n_samples):
+        _, neighbors = nn.kneighbors([X[i]])
+        diffs = X[i] - X[neighbors[0][1:], :]
+        scores += np.mean(np.abs(diffs), axis=0)
+    # menor média de diferença → mais estável → maior score
+    scores = 1 / (scores + 1e-12)
+    return scores
+
+
+def apply_feature_selection_to_activity(sensor, body_part, activity_id):
+    print(f"\n=== Feature Selection (individual) -> {sensor.upper()} | {body_part} | Act {activity_id} ===")
+
+    act_dir = os.path.join(cfg.BASE_DATA_PATH, sensor, body_part, f"act_{activity_id}")
+    fpath = os.path.join(act_dir, "features.csv")
+
+    if not os.path.exists(fpath):
+        print(f"[!] Arquivo não encontrado: {fpath}")
+        return
+
+    # Lê features
+    feat_names = np.loadtxt(fpath, delimiter=';', max_rows=1, dtype=str)
+    X = np.loadtxt(fpath, delimiter=';', skiprows=1)
+
+    if X.ndim == 1:
+        X = X.reshape(1, -1)
+
+    # --- Normaliza para evitar escalas absurdas ---
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # --- Calcula os scores ---
+    fisher_scores = fisher_score_single_activity(X_scaled)
+    relief_scores = relieff_single_activity(X_scaled)
+
+    # --- Salva ---
+    save_dir = os.path.join(act_dir, "feature_selection")
+    os.makedirs(save_dir, exist_ok=True)
+
+    with open(os.path.join(save_dir, "fisher_scores.csv"), 'w', encoding='utf-8') as f:
+        f.write("Feature;Score\n")
+        for name, score in zip(feat_names, fisher_scores):
+            f.write(f"{name};{score:.6f}\n")
+
+    with open(os.path.join(save_dir, "relief_scores.csv"), 'w', encoding='utf-8') as f:
+        f.write("Feature;Score\n")
+        for name, score in zip(feat_names, relief_scores):
+            f.write(f"{name};{score:.6f}\n")
+
+    print(f"[✔] Fisher + Relief salvos em {save_dir}")
