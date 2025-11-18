@@ -2,10 +2,13 @@ from utils.io import readFiles, read_data_per_person
 from core.data_split import splitFiles
 from core.metrics import activity_metric, zscore_outliers, k_mean, manual_kmeans, kmeans_outliers, dbscan_outliers, inject_outliers, linear_model, create_windows, linear_model_correction, linear_model_centered_window, compute_modulus_all
 from core.features import build_feature_matrix_activity, apply_feature_selection_to_sensor, statistical_significance, apply_pca_to_activity, apply_feature_selection_to_activity
+from core.classifier import evaluate_and_save_metrics, baseline_classifier
 import config as cfg
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
 
 def main():
     # 2
@@ -138,14 +141,16 @@ def main():
     #                 print(f"[OK] {sensor} | {part} | Atividade {act_id}: {len(X)} janelas salvas em {save_path}")
 
     """Parte B"""
-    extract_data = True
+    extract_data = False
+    train_model = True
 
     if extract_data:
         data_array_per_person = read_data_per_person(cfg.ASSETS_FOLDERS_PATH)
-        splitFiles(data_array_per_person, cfg.SPLIT_ASSETS_FOLDERS_PATH, save_tvt=False, save_kfold=False, kfold_save_item=2)
+        splitFiles(data_array_per_person, cfg.SPLIT_ASSETS_FOLDERS_PATH, save_tvt=True, save_kfold=False, kfold_save_item=2)
     
 
-
-    
+    if train_model:
+        baseline_classifier()
+        
 if __name__ == '__main__':
     main()
