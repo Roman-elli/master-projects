@@ -524,7 +524,6 @@ def relieff_single_activity(X, k=10):
     scores = 1 / (scores + 1e-12)
     return scores
 
-
 def apply_feature_selection_to_activity(sensor, body_part, activity_id):
     print(f"\n=== Feature Selection (individual) -> {sensor.upper()} | {body_part} | Act {activity_id} ===")
 

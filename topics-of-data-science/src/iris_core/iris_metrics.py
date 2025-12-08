@@ -4,6 +4,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, confusion_matrix
+from skrebate import ReliefF
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -79,6 +80,7 @@ def run_2_1_baselines(X, y):
         print(f"--- 10x10 CV ---")
         print(f"Média F1: {np.mean(f1_scores):.3f} (+/- {np.std(f1_scores):.3f})")
 
+#Exercicio 2.2
 def run_2_2_knn_analysis(X, y):
     print("\n" + "="*40 + "\n2.2 kNN Analysis\n" + "="*40)
     
@@ -135,6 +137,7 @@ def run_2_2_knn_analysis(X, y):
     plt.show()
     print("[Info] Gráfico Bias-Variance gerado.")
 
+#Exercicio 2.3
 def run_2_3_relief_tvt(X, y, title_suffix=""):
     print("\n" + "="*40 + f"\n2.3 ReliefF + TVT {title_suffix}\n" + "="*40)
     
@@ -207,10 +210,11 @@ def run_2_3_relief_tvt(X, y, title_suffix=""):
     print_metrics(metrics, f"Resultado Final no TESTE {title_suffix}")
     print("Matriz de Confusão Teste:\n", metrics['cm'])
 
+#Exercicio 2.4
 def run_2_4_relief_cv(X, y):
     print("\n" + "="*40 + "\n2.4 ReliefF + 10x10 CV\n" + "="*40)
     
-    rkf = RepeatedKFold(n_splits=10, n_repeats=1, random_state=42) # Reduzi repeats para 1 para ser rápido, o enunciado pede 10
+    rkf = RepeatedKFold(n_splits=10, n_repeats=10, random_state=42) 
     
     fold_results = []
     features_count_perf = {i: [] for i in range(1, X.shape[1]+1)}
