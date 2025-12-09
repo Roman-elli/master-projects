@@ -1,7 +1,7 @@
 from utils.io import readFiles, read_data_per_person
 from core.data_split import splitFiles
 from core.metrics import activity_metric, zscore_outliers, k_mean, manual_kmeans, kmeans_outliers, dbscan_outliers, inject_outliers, linear_model, create_windows, linear_model_correction, linear_model_centered_window, compute_modulus_all
-from core.features import build_feature_matrix_activity, apply_feature_selection_to_sensor, statistical_significance, apply_pca_to_activity, apply_feature_selection_to_activity
+from core.features import build_feature_matrix_activity, apply_feature_selection_to_sensor, statistical_significance, apply_pca_to_activity, apply_feature_selection_to_activity, extract_features_550, get_feature_names_550
 from core.classifier import baseline_classifier, knn_analysis, relieff_tvt, mlp_experiment
 import config as cfg
 import numpy as np
@@ -214,7 +214,7 @@ def main():
     #         for part in cfg.BODY_PARTS_PATH:
     #             for act_id in cfg.ACTIVITIES:
     #                 #apply_pca_to_activity(sensor, part, act_id)
-    #                 apply_feature_selection_to_activity(sensor, part, act_id)
+                      #apply_feature_selection_to_activity(sensor, part, act_id)
     #         #print(f"\n=== Seleção de features -> Sensor: {sensor.upper()} ===")
     #         #fisher_all, relief_all = apply_feature_selection_to_sensor(sensor, cfg.BODY_PARTS_PATH, top_k=20)
     # else:
@@ -238,31 +238,106 @@ def main():
     #                 print(f"[OK] {sensor} | {part} | Atividade {act_id}: {len(X)} janelas salvas em {save_path}")
 
     """Parte B"""
-    extract_data = False
-    run_models = True
-
-    train_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "train")
-    valid_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "valid") 
-    test_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "test")
-    
-    if extract_data:
-        data_per_person = read_data_per_person(cfg.ASSETS_FOLDERS_PATH)
-        splitFiles(data_per_person, cfg.SPLIT_ASSETS_FOLDERS_PATH, save_tvt=True, save_kfold=False)
-
-    if run_models:
-        SENSOR = 'acc' 
-        print("   -> Treino:")
-        X_train, y_train = extract_features_from_folder(train_path, sensor=SENSOR)
-        print("   -> Validação:")
-        X_val, y_val     = extract_features_from_folder(valid_path, sensor=SENSOR)
-        print("   -> Teste:")
-        X_test, y_test   = extract_features_from_folder(test_path, sensor=SENSOR)
+    # Imports...
+    calculate_features = False
+    if calculate_features:
         
-        if X_train is None or X_val is None or X_test is None:
-            print("ERRO: Falha na extração. Verifique os caminhos CSV.")
-            return
+        # 1. Carregar os dados
+        print("A ler ficheiros...")
+        data_array = readFiles(cfg.ASSETS_FOLDERS_PATH)
 
-        print(f"   Dataset pronto: X_train={X_train.shape}, X_test={X_test.shape}")
+        # 2. Configurações para 550 Colunas
+        feat_names = get_feature_names_550() 
+        
+        WINDOW_MS = cfg.WINDOW_SIZE 
+        OVERLAP = cfg.OVERLAP     
+        FS = cfg.FS
+        
+        window_size = int(FS * (WINDOW_MS / 1000))
+        step_size = int(window_size * (1 - OVERLAP))
+        
+        save_root = "data/features_550_final"
+        IDX_LABEL = 11  # VERIFIQUE ESTE ÍNDICE! Se tem 30 colunas de dados, a label deve estar depois (ex: 31).
+        
+        print(f"\n=== Iniciando Extração de 550 Features ===")
+        print(f"Pessoas encontradas: {len(data_array)}")
+
+        for p_idx, person_files in enumerate(data_array, start=1):
+            
+            p_id = p_idx 
+            print(f"\n-> Processando Pessoa {p_id:02d}...")
+            
+            if not person_files: continue
+                
+            try:
+                full_person_data = np.vstack(person_files)
+            except ValueError:
+                print("   [Erro] Dimensões incompatíveis.")
+                continue
+
+            unique_activities = np.unique(full_person_data[:, IDX_LABEL])
+
+            for act_id in unique_activities:
+                act_id = int(act_id)
+                
+                act_mask = full_person_data[:, IDX_LABEL] == act_id
+                act_data = full_person_data[act_mask]
+                
+                if len(act_data) < window_size: continue
+
+                X_list = []
+                
+                # --- Janelamento ---
+                for start in range(0, len(act_data) - window_size + 1, step_size):
+                    window = act_data[start : start + window_size, :]
+                    
+                    try:
+                        # [ Image of multi-sensor feature extraction ]
+                        # Chama a função que faz o loop dos 5 sensores e concatena
+                        features = extract_features_550(window, fs=FS)
+                        X_list.append(features)
+                    except Exception:
+                        continue
+                
+                # --- Salvar ---
+                if len(X_list) > 0:
+                    folder_path = os.path.join(save_root, f"Person_{p_id:02d}", f"Activity_{act_id:02d}")
+                    os.makedirs(folder_path, exist_ok=True)
+                    
+                    df = pd.DataFrame(X_list, columns=feat_names)
+                    save_file = os.path.join(folder_path, "features.csv")
+                    
+                    df.to_csv(save_file, index=False, sep=';', float_format='%.6f')
+                    print(f"   [Salvo] Atividade {act_id}: {len(df)} janelas (550 cols).")
+
+    
+    
+    
+    # extract_data = False
+    # run_models = True
+
+    # train_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "train")
+    # valid_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "valid") 
+    # test_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "test")
+    
+    # if extract_data:
+    #     data_per_person = read_data_per_person(cfg.ASSETS_FOLDERS_PATH)
+    #     splitFiles(data_per_person, cfg.SPLIT_ASSETS_FOLDERS_PATH, save_tvt=True, save_kfold=False)
+
+    # if run_models:
+    #     SENSOR = 'acc' 
+    #     print("   -> Treino:")
+    #     X_train, y_train = extract_features_from_folder(train_path, sensor=SENSOR)
+    #     print("   -> Validação:")
+    #     X_val, y_val     = extract_features_from_folder(valid_path, sensor=SENSOR)
+    #     print("   -> Teste:")
+    #     X_test, y_test   = extract_features_from_folder(test_path, sensor=SENSOR)
+        
+    #     if X_train is None or X_val is None or X_test is None:
+    #         print("ERRO: Falha na extração. Verifique os caminhos CSV.")
+    #         return
+
+    #     print(f"   Dataset pronto: X_train={X_train.shape}, X_test={X_test.shape}")
 
         # --- Exercicio 3.1 ---
         #X_train_full = np.vstack([X_train, X_val])
@@ -273,16 +348,16 @@ def main():
         #knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test)
     
         # --- EXERCICIO 3.3 (ReliefF + Otimização) ---
-        best_features = relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test)
+        # best_features = relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test)
 
-        if best_features is not None:
-            # --- EXERCICIO 4.1 (Taxa Fixa) ---
-            mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, best_features, lr_mode='constant')
+        # if best_features is not None:
+        #     # --- EXERCICIO 4.1 (Taxa Fixa) ---
+        #     mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, best_features, lr_mode='constant')
 
-            # --- EXERCICIO 4.2 (Taxa Variável) ---
-            mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, best_features, lr_mode='adaptive')
-        else:
-            print("Saltando MLP (sem features selecionadas).")
+        #     # --- EXERCICIO 4.2 (Taxa Variável) ---
+        #     mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, best_features, lr_mode='adaptive')
+        # else:
+        #     print("Saltando MLP (sem features selecionadas).")
         
         
 if __name__ == '__main__':

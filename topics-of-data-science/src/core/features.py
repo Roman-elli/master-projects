@@ -564,3 +564,157 @@ def apply_feature_selection_to_activity(sensor, body_part, activity_id):
             f.write(f"{name};{score:.6f}\n")
 
     print(f"[✔] Fisher + Relief salvos em {save_dir}")
+
+
+
+import numpy as np
+from scipy import stats
+
+# ==========================================
+# 1. FUNÇÕES AUXILIARES (Matemática Pura)
+# ==========================================
+def _get_fft(d, fs):
+    return np.abs(np.fft.rfft(d)), np.fft.rfftfreq(len(d), 1/fs)
+
+def _safe_stat(func, d):
+    if np.std(d) < 1e-9: return 0.0
+    return func(d)
+
+def _pairwise_corr(v1, v2):
+    if np.std(v1) < 1e-9 or np.std(v2) < 1e-9: return 0.0
+    return np.corrcoef(v1, v2)[0, 1]
+
+def _zcr(d):
+    if len(d) < 2: return 0.0
+    d_centered = d - np.mean(d)
+    return ((d_centered[:-1] * d_centered[1:]) < 0).sum() / len(d)
+
+def _mcr(d):
+    if len(d) < 2: return 0.0
+    mean_val = np.mean(d)
+    return (((d[:-1] - mean_val) * (d[1:] - mean_val)) < 0).sum() / len(d)
+
+def _spec_entropy(d, fs):
+    fft_vals, _ = _get_fft(d, fs)
+    psd = fft_vals**2 / (np.sum(fft_vals**2) + 1e-12)
+    return -np.sum(psd * np.log(psd + 1e-12))
+
+# ==========================================
+# 2. EXTRAÇÃO UNITÁRIA (O bloco de 110 features)
+# ==========================================
+def _extract_unit_110(Ax, Ay, Az, Gx, Gy, Gz, fs):
+    """
+    Calcula as 110 features para UM conjunto de 6 eixos (Acc+Gyro).
+    Retorna uma lista.
+    """
+    dt = 1.0 / fs
+    channels = [Ax, Ay, Az, Gx, Gy, Gz]
+    features = []
+
+    # A. ESTATÍSTICAS (84 features)
+    for ch in channels:
+        fft_vals, fft_freqs = _get_fft(ch, fs)
+        features.extend([
+            np.mean(ch), np.median(ch), np.std(ch), np.var(ch), np.sqrt(np.mean(ch**2)),
+            np.mean(np.abs(np.diff(ch))),
+            _safe_stat(stats.skew, ch), _safe_stat(stats.kurtosis, ch),
+            stats.iqr(ch), _zcr(ch), _mcr(ch),
+            fft_freqs[np.argmax(fft_vals)] if len(fft_vals) > 0 else 0,
+            np.sum(fft_vals**2) / len(ch),
+            _spec_entropy(ch, fs)
+        ])
+
+    # B. CORRELAÇÕES (15 features)
+    pairs = [(Ax,Ay), (Ax,Az), (Ay,Az), (Gx,Gy), (Gx,Gz), (Gy,Gz),
+             (Ax,Gx), (Ay,Gy), (Az,Gz), (Ax,Gy), (Ax,Gz), (Ay,Gx), (Ay,Gz), (Az,Gx), (Az,Gy)]
+    for v1, v2 in pairs:
+        features.append(_pairwise_corr(v1, v2))
+
+    # C. FÍSICAS (11 features)
+    mi = np.sqrt(Ax**2 + Ay**2 + Az**2)
+    features.extend([np.mean(mi), np.var(mi)])
+    features.append(np.sum(np.abs(Ax) + np.abs(Ay) + np.abs(Az)) / len(Ax)) # SMA
+    
+    try:
+        eigvals = np.linalg.eigvalsh(np.cov(np.vstack((Ax, Ay, Az))))
+        features.extend([eigvals[-1], eigvals[-2]])
+    except: features.extend([0.0, 0.0])
+
+    heading = np.sqrt(Ay**2 + Az**2)
+    features.append(_pairwise_corr(Ax, heading)) # CAGH
+    
+    vy, vz = np.cumsum(Ay) * dt, np.cumsum(Az) * dt
+    features.append(np.mean(np.sqrt(vy**2 + vz**2))) # AVH
+    features.append(np.mean(np.cumsum(Ax) * dt)) # AVG
+    features.append(np.mean(np.cumsum(Gx) * dt)) # ARATG
+    
+    aae = np.mean(np.sum([Ax**2, Ay**2, Az**2], axis=0))
+    are = np.mean(np.sum([Gx**2, Gy**2, Gz**2], axis=0))
+    features.extend([aae, are])
+
+    return features
+
+# ==========================================
+# 3. EXTRAÇÃO 550 (O loop pelos sensores)
+# ==========================================
+
+def extract_features_550(window_data, fs=50):
+    """
+    Percorre os 5 sensores sequencialmente, extrai 110 features de cada
+    e concatena horizontalmente. Total: 550 colunas.
+    """
+    all_features = [] 
+    
+    # Assumindo: Coluna 0 é ID, dados começam na 1.
+    # Cada sensor tem 6 eixos (3 Acc + 3 Gyro).
+    start_col = 1 
+    
+    # Loop 5 vezes (para os 5 sensores)
+    for i in range(5):
+        end_col = start_col + 6
+        
+        # Proteção: Se o CSV não tiver colunas suficientes, preenche com zeros
+        if end_col > window_data.shape[1]:
+            all_features.extend([0.0] * 110)
+            continue
+
+        # Pegar os dados brutos APENAS deste sensor
+        sensor_block = window_data[:, start_col:end_col]
+        
+        # Separar canais
+        Ax, Ay, Az = sensor_block[:, 0], sensor_block[:, 1], sensor_block[:, 2]
+        Gx, Gy, Gz = sensor_block[:, 3], sensor_block[:, 4], sensor_block[:, 5]
+
+        # Calcular as 110 features deste bloco
+        feats_110 = _extract_unit_110(Ax, Ay, Az, Gx, Gy, Gz, fs)
+        
+        # === CONCATENAÇÃO HORIZONTAL ===
+        all_features.extend(feats_110)
+        
+        # Avança para o próximo sensor
+        start_col = end_col
+
+    return np.nan_to_num(np.array(all_features))
+
+
+def get_feature_names_550():
+    # 1. Gera nomes base para 110 features
+    ch = ['Ax', 'Ay', 'Az', 'Gx', 'Gy', 'Gz']
+    st = ['Mean', 'Median', 'Std', 'Var', 'RMS', 'AvgDeriv', 'Skew', 'Kurt', 'IQR', 'ZCR', 'MCR', 'DomFreq', 'Energy', 'SpecEnt']
+    base_names = [f"{c}_{s}" for c in ch for s in st]
+    
+    corr_names = ['AxAy', 'AxAz', 'AyAz', 'GxGy', 'GxGz', 'GyGz', 'AxGx', 'AyGy', 'AzGz', 'AxGy', 'AxGz', 'AyGx', 'AyGz', 'AzGx', 'AzGy']
+    base_names += [f"Corr_{p}" for p in corr_names]
+    
+    phys_names = ['AI', 'VI', 'SMA', 'EVA1', 'EVA2', 'CAGH', 'AVH', 'AVG', 'ARATG', 'AAE', 'ARE']
+    base_names += phys_names
+    
+    # 2. Multiplica pelos 5 sensores (S1...S5)
+    final_names = []
+    sensor_labels = ['S1', 'S2', 'S3', 'S4', 'S5']
+    
+    for s_label in sensor_labels:
+        # Ex: S1_Ax_Mean, S1_Corr_AxAy, ..., S5_ARE
+        final_names += [f"{s_label}_{n}" for n in base_names]
+        
+    return final_names # Total 550
