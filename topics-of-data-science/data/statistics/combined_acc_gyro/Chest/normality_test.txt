@@ -1,0 +1,67 @@
+=== Análise Estatística (Normality Check) - Chest ===
+Nota: p-value < 0.05 indica que os dados NÃO seguem uma distribuição normal.
+
+--- Atividade 1 ---
+  [ACC]  Média: 9.9922 | KS p-value: 0.0000e+00
+  [GYRO] Média: 5.5183 | KS p-value: 0.0000e+00
+
+--- Atividade 2 ---
+  [ACC]  Média: 9.7581 | KS p-value: 0.0000e+00
+  [GYRO] Média: 4.3381 | KS p-value: 0.0000e+00
+
+--- Atividade 3 ---
+  [ACC]  Média: 9.7473 | KS p-value: 0.0000e+00
+  [GYRO] Média: 4.6921 | KS p-value: 0.0000e+00
+
+--- Atividade 4 ---
+  [ACC]  Média: 10.2109 | KS p-value: 0.0000e+00
+  [GYRO] Média: 42.1376 | KS p-value: 0.0000e+00
+
+--- Atividade 5 ---
+  [ACC]  Média: 10.2308 | KS p-value: 0.0000e+00
+  [GYRO] Média: 41.6334 | KS p-value: 0.0000e+00
+
+--- Atividade 6 ---
+  [ACC]  Média: 10.2720 | KS p-value: 0.0000e+00
+  [GYRO] Média: 58.4996 | KS p-value: 0.0000e+00
+
+--- Atividade 7 ---
+  [ACC]  Média: 10.2642 | KS p-value: 0.0000e+00
+  [GYRO] Média: 57.3764 | KS p-value: 0.0000e+00
+
+--- Atividade 8 ---
+  [ACC]  Média: 9.6863 | KS p-value: 8.1535e-123
+  [GYRO] Média: 17.3763 | KS p-value: 0.0000e+00
+
+--- Atividade 9 ---
+  [ACC]  Média: 9.8035 | KS p-value: 3.0510e-191
+  [GYRO] Média: 15.8009 | KS p-value: 0.0000e+00
+
+--- Atividade 10 ---
+  [ACC]  Média: 9.6857 | KS p-value: 2.7127e-84
+  [GYRO] Média: 16.0003 | KS p-value: 0.0000e+00
+
+--- Atividade 11 ---
+  [ACC]  Média: 9.9371 | KS p-value: 5.5900e-203
+  [GYRO] Média: 15.8148 | KS p-value: 0.0000e+00
+
+--- Atividade 12 ---
+  [ACC]  Média: 10.1738 | KS p-value: 9.4269e-56
+  [GYRO] Média: 24.9034 | KS p-value: 4.7969e-56
+
+--- Atividade 13 ---
+  [ACC]  Média: 10.0572 | KS p-value: 1.1700e-124
+  [GYRO] Média: 7.4602 | KS p-value: 6.7397e-266
+
+--- Atividade 14 ---
+  [ACC]  Média: 10.2633 | KS p-value: 1.4836e-79
+  [GYRO] Média: 34.5710 | KS p-value: 1.2038e-30
+
+--- Atividade 15 ---
+  [ACC]  Média: 10.3067 | KS p-value: 7.9688e-16
+  [GYRO] Média: 45.1740 | KS p-value: 2.7003e-27
+
+--- Atividade 16 ---
+  [ACC]  Média: 10.3144 | KS p-value: 3.9572e-17
+  [GYRO] Média: 47.0725 | KS p-value: 2.1824e-21
+

@@ -39,7 +39,7 @@ def evaluate_and_save_metrics(y_true, y_pred, save_path, fold_name="tvt"):
     print(f"[✔] Métricas salvas em {file_path}")
     return metrics_df, cm
 
-def baseline_classifier(X_train, y_train, X_test, y_test, save_dir="data/results/baseline"):
+def baseline_classifier(X_train, y_train, X_test, y_test, save_dir="data/train_results/results/baseline"):
     """
     Executa os 3 cenários pedidos para o OneR:
     i) Train-only (Treina e testa em tudo)
@@ -89,7 +89,7 @@ def baseline_classifier(X_train, y_train, X_test, y_test, save_dir="data/results
     print(f"Média F1 (100 folds): {np.mean(f1_scores):.4f} (+/- {np.std(f1_scores):.4f})")
     print(f"Média Acc (100 folds): {np.mean(acc_scores):.4f}")
     
-def knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/results/knn"):
+def knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/train_results/results/knn"):
     os.makedirs(save_dir, exist_ok=True)
     print("\n" + "="*40 + "\n3.2 kNN Analysis\n" + "="*40)
     
@@ -174,7 +174,7 @@ def knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/
     plt.show() # Remove isto se estiveres a correr em servidor sem ecrã
     print(f"[✔] Gráfico Bias-Variance salvo em {plot_path}")
 '''
-def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/results/relief"):
+def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/train_results/results/relief"):
     os.makedirs(save_dir, exist_ok=True)
     print("\n" + "="*40 + "\n3.3 OTIMIZAÇÃO RELIEFF + kNN (TVT)\n" + "="*40)    
     
@@ -284,7 +284,7 @@ def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/r
 
 from sklearn.utils import resample # <--- IMPORTANTE: Adiciona este import
 
-def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/results/relieff"):
+def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/train_results/results/relieff"):
     os.makedirs(save_dir, exist_ok=True)
     print("\n" + "="*40 + "\n3.3 OTIMIZAÇÃO RELIEFF + kNN (TVT)\n" + "="*40)
     
@@ -412,10 +412,10 @@ def mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, selected_feat
 
     if lr_mode == 'constant':
         title = "4.1 MLP - Taxa Fixa"
-        save_dir = "data/results/mlp_fixed"
+        save_dir = "data/train_results/results/mlp_fixed"
     else:
         title = "4.2 MLP - Taxa Variável (Adaptive)"
-        save_dir = "data/results/mlp_variable"
+        save_dir = "data/train_results/results/mlp_variable"
 
     os.makedirs(save_dir, exist_ok=True)
     print("\n" + "="*40 + f"\n{title}\n" + "="*40)

@@ -619,3 +619,53 @@ def compute_modulus_all(data_array, sensor='acc'):
     combined_mod = np.concatenate(all_mods)
 
     return combined_mod
+
+# No final de core/metrics.py
+
+def clean_outliers_zscore(person_matrix, k=4.0):
+    """
+    Recebe a matriz completa da pessoa (N linhas x 33 colunas).
+    Percorre os dados dos sensores (colunas 2 a 31).
+    Se encontrar um valor com Z-Score > k, substitui por interpolação.
+    """
+    # Faz cópia para não estragar a original
+    cleaned = person_matrix.copy()
+    
+    # Índices das colunas de dados (Ignora ID, TS e Label)
+    start_col = 2
+    end_col = 32
+    
+    count = 0
+    
+    for col in range(start_col, end_col):
+        signal = cleaned[:, col]
+        
+        # 1. Cálculo Estatístico
+        mean = np.mean(signal)
+        std = np.std(signal)
+        
+        if std < 1e-6: continue # Sensor parado, salta
+            
+        z_scores = np.abs((signal - mean) / std)
+        
+        # 2. Identificar Outliers
+        outliers_mask = z_scores > k
+        
+        if np.any(outliers_mask):
+            count += np.sum(outliers_mask)
+            
+            # 3. Interpolação (Correção)
+            # x_all: índices de 0 a N
+            x_all = np.arange(len(signal))
+            
+            # x_good: índices onde NÃO há outliers
+            x_good = x_all[~outliers_mask]
+            y_good = signal[~outliers_mask]
+            
+            # Preenche os locais ruins interpolando pelos vizinhos bons
+            cleaned[outliers_mask, col] = np.interp(x_all[outliers_mask], x_good, y_good)
+            
+    if count > 0:
+        print(f"   [Limpeza Z-Score] Corrigidos {count} pontos nesta pessoa.")
+        
+    return cleaned

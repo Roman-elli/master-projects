@@ -2,6 +2,10 @@
 ASSETS_FOLDERS_PATH = "assets/"
 SPLIT_ASSETS_FOLDERS_PATH = "split_assets/"
 BASE_DATA_PATH = "data/features"
+FEATURES_SOURCE_PATH = "data/features_550_final"
+DATASET_OUTPUT_PATH = "data/dataset_550_balanced_norm"
+
+
 
 PCA_THRESHOLD = 0.75
 LABELS_COUNTER = 16
@@ -18,7 +22,7 @@ SENSOR_COLS = {
 BODY_PARTS_PATH = ["Left_Wrist", "Right_Wrist", "Chest", "Right_Upper_Leg", "Left_Lower_Leg"]
 BODY_PARTS = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
 
-# Configurações de janela
+    # Configurações de janela
 WINDOW_SIZE = 2000
 OVERLAP = 0.5
 FS = 51.2

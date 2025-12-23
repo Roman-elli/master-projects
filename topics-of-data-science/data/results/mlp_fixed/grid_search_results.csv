@@ -1,9 +1,0 @@
-activation,neurons,learning_rate,f1_val
-logistic,10,constant,0.1924650589175354
-logistic,50,constant,0.2066184752314909
-logistic,100,constant,0.20052598909953587
-logistic,200,constant,0.20923523070983172
-relu,10,constant,0.204919132696112
-relu,50,constant,0.22683519793592855
-relu,100,constant,0.21416677165340708
-relu,200,constant,0.1994110907978797
