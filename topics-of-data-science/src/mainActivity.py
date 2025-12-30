@@ -3,16 +3,17 @@ import numpy as np
 import config as cfg
 import matplotlib as plt
 import pandas as pd
+import datetime
 
 # --- IMPORTS UTILS ---
-from utils.io import readFiles, read_multisensor_data, read_data_per_person
+from utils.io import readFiles, read_multisensor_data, read_data_per_person, get_next_version_dir, load_best_features_from_version
 from core.data_split import create_dataset_final
 
 # --- IMPORTS ANALYTICS & METRICS ---
 from core.metrics import (
     activity_metric, zscore_outliers, k_mean, kmeans_outliers, dbscan_outliers, 
     inject_outliers, linear_model, linear_model_correction, 
-    linear_model_centered_window, compute_modulus_all, clean_outliers_zscore
+    linear_model_centered_window, compute_modulus_all, clean_outliers_zscore, clean_outliers_kmeans
 )
 
 # --- IMPORTS FEATURES ---
@@ -24,6 +25,7 @@ from core.features import (
 
 # --- IMPORTS CLASSIFIERS ---
 from core.classifier import baseline_classifier, knn_analysis, relieff_tvt, mlp_experiment
+from core.neuro_net import run_custom_mlp
 
 def main():
     run_part_A = False
@@ -190,117 +192,106 @@ def main():
     # =================================================================
     if run_part_B:
         print("\n=== EXECUTANDO PARTE B ===")
+        
+        # 1. Configurar Diretório de Resultados
+        results_dir = get_next_version_dir()
+        os.makedirs(results_dir, exist_ok=True)
+        print(f" -> Resultados serão salvos em: {results_dir}")
 
+        # --- CONFIGURAÇÕES DE EXPERIÊNCIA ---
         calculate_features = False
-        split_dataset = False
+        split_dataset = True
         run_models = True
         
-        # -------------------------------------------------------------
-        # 1. EXTRAÇÃO DE FEATURES POR ATIVIDADE
-        # -------------------------------------------------------------
-        if calculate_features:            
-            # 1. Carregar os dados BRUTOS
-            print("1. A ler ficheiros e a juntar sensores horizontalmente...")
-            data_array = read_multisensor_data(cfg.ASSETS_FOLDERS_PATH)
+        # Método para tratamento de outliers
+        CLEANING_METHOD  = cfg.CLEANING_METHOD
+        
+        # Z-Score setup
+        Z_SCORE_VAL = cfg.Z_SCORE_VALUE
+        
+        # K-Means setup
+        KMEANS_CLUSTERS  = cfg.LABELS_COUNTER
+        KMEANS_THRESHOLD = cfg.KMEANS_THRESHOLD_VALUE
+        
+        # Método de tratamento aos sensores com números diferentes de amostras
+        SAMPLING_METHOD  = cfg.SAMPLING_METHOD
 
-            # 2. Configurações de Janelamento
+        # -------------------------------------------------------------
+        # 1. EXTRAÇÃO DE FEATURES
+        # -------------------------------------------------------------
+        if calculate_features:
+            print(f"1. Extração (Limpeza: {CLEANING_METHOD})...")
+            
+            data_array = read_multisensor_data(cfg.ASSETS_FOLDERS_PATH)
             feat_names = get_feature_names_550() 
-            
-            WINDOW_MS = cfg.WINDOW_SIZE 
-            OVERLAP = cfg.OVERLAP     
             FS = cfg.FS
-            
-            # Converter ms para número de linhas (amostras)
-            window_size = int(FS * (WINDOW_MS / 1000))
-            step_size = int(window_size * (1 - OVERLAP))
-            
-            save_root = "data/features_550_final"
-            
-            # A Label é a última coluna da matriz larga
+            window_size = int(FS * (cfg.WINDOW_SIZE / 1000))
+            step_size = int(window_size * (1 - cfg.OVERLAP))
             IDX_LABEL = -1 
-            
-            print(f"   -> Pessoas encontradas: {len(data_array)}")
-            print(f"   -> Janela: {window_size} linhas | Passo: {step_size} linhas")
+            save_root = "data/features_550_final"
 
             for p_idx, person_matrix in enumerate(data_array, start=1):
-                
-                p_id = p_idx 
-                print(f"\n-> Processando Pessoa {p_id:02d}...")
-                
                 if person_matrix is None or len(person_matrix) == 0: continue
-
-                # === LIMPEZA DE DADOS ===
-                # Aplicamos a correção Z-Score + Interpolação na matriz inteira da pessoa
-                #person_matrix = clean_outliers_zscore(person_matrix, k=4.0)
-                # ========================================
-
+                
+                # === [NOVO] LÓGICA DE LIMPEZA DINÂMICA ===
+                if CLEANING_METHOD == 'ZSCORE':
+                    person_matrix = clean_outliers_zscore(person_matrix, k=Z_SCORE_VAL)
+                elif CLEANING_METHOD == 'KMEANS':
+                    person_matrix = clean_outliers_kmeans(
+                        person_matrix, 
+                        n_clusters=KMEANS_CLUSTERS, 
+                        percentile_threshold=KMEANS_THRESHOLD
+                    )
+                # ==========================================
+                
                 unique_activities = np.unique(person_matrix[:, IDX_LABEL])
+                p_id = p_idx
 
                 for act_id in unique_activities:
                     act_id = int(act_id)
-                    
-                    # Filtrar apenas as linhas desta atividade
                     act_mask = person_matrix[:, IDX_LABEL] == act_id
                     act_data = person_matrix[act_mask]
                     
-                    act_data = clean_outliers_zscore(act_data, k=4.0)
                     
-                    # Se a gravação for menor que 1 janela, ignoramos
                     if len(act_data) < window_size: continue
-
                     X_list = []
-                    
-                    # --- JANELAMENTO DESLIZANTE ---
                     for start in range(0, len(act_data) - window_size + 1, step_size):
-                        # Recorta a janela (50 linhas x 33 colunas)
                         window = act_data[start : start + window_size, :]
-                        
                         try:
-                            # Extrai 550 features desta janela (Dados já estão limpos!)
                             features = extract_features_550(window, fs=FS)
                             X_list.append(features)
-                        except Exception:
-                            continue
+                        except: continue
                     
-                    # --- SALVAR FEATURES EM CSV ---
                     if len(X_list) > 0:
                         folder_path = os.path.join(save_root, f"Person_{p_id:02d}", f"Activity_{act_id:02d}")
                         os.makedirs(folder_path, exist_ok=True)
-                        
-                        df = pd.DataFrame(X_list, columns=feat_names)
-                        save_file = os.path.join(folder_path, "features.csv")
-                        
-                        df.to_csv(save_file, index=False, sep=';', float_format='%.6f')
-                        print(f"   [Salvo] Atividade {act_id}: {len(df)} janelas.")
-          
-        # ---------------------------------------------------------
-        # 2. CRIAÇÃO DO DATASET FINAL (Split Train/Val/Test)
-        # ---------------------------------------------------------              
+                        pd.DataFrame(X_list, columns=feat_names).to_csv(
+                            os.path.join(folder_path, "features.csv"), 
+                            index=False, sep=';', float_format='%.6f'
+                        )
+                        # print(f"   [Salvo] P{p_id:02d} Act {act_id} ({len(X_list)} wins)")
+
+        # -------------------------------------------------------------
+        # 2. DATASET SPLIT E BALANCEAMENTO
+        # -------------------------------------------------------------              
         if split_dataset:
-            # 1. Carregar dados brutos para cálculo de proporção
-            if 'data_array' not in locals():
-                print("A ler dados brutos...")
-                data_array = read_data_per_person(cfg.ASSETS_FOLDERS_PATH)        
+            if 'data_array' not in locals(): data_array = read_data_per_person(cfg.ASSETS_FOLDERS_PATH)        
             
-            # 2. Executar Pipeline
-            if os.path.exists(cfg.FEATURES_SOURCE_PATH):
-                create_dataset_final(
-                    raw_data_list=data_array, 
-                    features_root=cfg.FEATURES_SOURCE_PATH, 
-                    save_dir=cfg.DATASET_OUTPUT_PATH
-                )
-            else:
-                print("Erro: Extraia as features primeiro.")
+            create_dataset_final(
+                raw_data_list=data_array, 
+                features_root=cfg.FEATURES_SOURCE_PATH, 
+                save_dir=cfg.DATASET_OUTPUT_PATH,
+                sampling_method=SAMPLING_METHOD
+            )
                 
-        # ---------------------------------------------------------
-        # 3. TREINO E AVALIAÇÃO DE MODELOS (Baseline, KNN, MLP)
-        # ---------------------------------------------------------
+        # -------------------------------------------------------------
+        # 3. TREINO DE MODELOS
+        # -------------------------------------------------------------
         if run_models:
             DATASET_DIR = cfg.DATASET_OUTPUT_PATH
-            print(f"\n=== Iniciando Treino de Modelos (Dados: {DATASET_DIR}) ===")
+            print(f"\n=== Iniciando Treino (Dados: {DATASET_DIR}) ===")
             
             try:
-                # Carregar Datasets gerados anteriormente
                 X_train = np.loadtxt(f"{DATASET_DIR}/X_train.csv", delimiter=";")
                 y_train = np.loadtxt(f"{DATASET_DIR}/y_train.csv", delimiter=";")
                 X_val = np.loadtxt(f"{DATASET_DIR}/X_val.csv", delimiter=";")
@@ -308,83 +299,74 @@ def main():
                 X_test = np.loadtxt(f"{DATASET_DIR}/X_test.csv", delimiter=";")
                 y_test = np.loadtxt(f"{DATASET_DIR}/y_test.csv", delimiter=";")
                 
-                print(f"   Train: {X_train.shape} | Val: {X_val.shape} | Test: {X_test.shape}")
+                # --- Guardar Informações no TXT ---
+                info_file = os.path.join(results_dir, "experiment_info.txt")
+                with open(info_file, "w", encoding='utf-8') as f:
+                    f.write(f"=== EXPERIÊNCIA {os.path.basename(results_dir)} ===\n")
+                    f.write(f"Data: {datetime.datetime.now()}\n\n")
+                    f.write(f"Configurações:\n")
+                    f.write(f"- Cleaning Method: {CLEANING_METHOD}\n")
+                    if CLEANING_METHOD == 'ZSCORE':
+                        f.write(f"  > Z-Score Threshold: {Z_SCORE_VAL}\n")
+                    elif CLEANING_METHOD == 'KMEANS':
+                        f.write(f"  > KMeans Clusters: {KMEANS_CLUSTERS}\n")
+                        f.write(f"  > Threshold Percentile: {KMEANS_THRESHOLD}\n")
+                    
+                    f.write(f"- Sampling Method: {SAMPLING_METHOD}\n")
+                    f.write(f"- Window Size: {cfg.WINDOW_SIZE}ms\n")
+                    f.write(f"- Overlap: {cfg.OVERLAP}\n\n")
+                    f.write(f"Dados:\n")
+                    f.write(f"- Treino: {X_train.shape[0]} amostras\n")
+                    f.write(f"- Validação: {X_val.shape[0]} amostras\n")
+                    f.write(f"- Teste: {X_test.shape[0]} amostras\n")
+                
+                print(f"[Info] Relatório inicial salvo em: {info_file}")
 
-                # Combinar Train+Val para algoritmos que não usam validação (Baseline/KNN)
                 X_train_full = np.vstack([X_train, X_val])
                 y_train_full = np.concatenate([y_train, y_val])
 
-                # --- 3.1 BASELINE (ZeroR / Random) ---
-                print("\n--- [3.1] Classificador Baseline ---")
-                baseline_classifier(X_train_full, y_train_full, X_test, y_test)
+                #baseline_classifier(X_train_full, y_train_full, X_test, y_test, save_dir=f"{results_dir}/baseline")
+                #knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test, save_dir=f"{results_dir}/knn")
+                
+                # --- CONFIGURAÇÃO DE SELEÇÃO ---
+                LOAD_VERSION = 5
+                TOP_N = 90
 
-                # --- 3.2 KNN (K-Nearest Neighbors) ---
-                print("\n--- [3.2] Análise KNN ---")
-                knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test)
+                best_features = None
 
-                # --- 3.3 Seleção de Features (ReliefF - Supervisionado) ---
-                print("\n--- [3.3] Feature Selection (ReliefF) ---")
-                best_features = relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test)
+                # 1. Tentar carregar de versão anterior
+                if LOAD_VERSION is not None:
+                    best_features = load_best_features_from_version(LOAD_VERSION, top_n=TOP_N)
 
-                # --- 4. MLP (Rede Neural) ---
+                # 2. Se não carregou (ou se LOAD_VERSION for None), calcula do zero
+                if best_features is None:
+                    print("\n>>> A calcular ReliefF do zero...")
+                    best_features = relieff_tvt(
+                        X_train, y_train, X_val, y_val, X_test, y_test, 
+                        save_dir=f"{results_dir}/relieff"
+                    )
+
                 if best_features is not None:
-                    print("\n--- [4] MLP Experiments ---")
-                    # Treino com Taxa de Aprendizagem Fixa
-                    mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, best_features, lr_mode='constant')
-                    # Treino com Taxa de Aprendizagem Adaptativa
-                    mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, best_features, lr_mode='adaptive')
-                else:
-                    print("Aviso: ReliefF não retornou features, pulando MLP.")
-
+                    mlp_experiment(
+                        X_train, y_train, X_val, y_val, X_test, y_test, 
+                        selected_features=best_features, 
+                        save_dir=f"{results_dir}/mlp_experiments"
+                    )
+            
+                    # --- PONTO 5: Rede Neuronal ---
+                    run_custom_mlp(
+                        X_train, y_train, 
+                        X_val, y_val,
+                        X_test, y_test, 
+                        selected_features=best_features, 
+                        save_dir=f"{results_dir}/custom_mlp"
+                    )
+                    
+                    
             except Exception as e:
-                print(f"Erro crítico ao rodar modelos: {e}")
-                print(f"Dica: Verifique se os ficheiros CSV existem em {DATASET_DIR}")
+                print(f"Erro: {e}")
+                with open(os.path.join(results_dir, "error_log.txt"), "w") as f:
+                    f.write(str(e))
         
-        # extract_data = False
-        # run_models = True
-
-        # train_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "train")
-        # valid_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "valid") 
-        # test_path = os.path.join(cfg.SPLIT_ASSETS_FOLDERS_PATH, "tvt", "test")
-        
-        # if extract_data:
-        #     data_per_person = read_data_per_person(cfg.ASSETS_FOLDERS_PATH)
-        #     splitFiles(data_per_person, cfg.SPLIT_ASSETS_FOLDERS_PATH, save_tvt=True, save_kfold=False)
-
-        # if run_models:
-        #     SENSOR = 'acc' 
-        #     print("   -> Treino:")
-        #     X_train, y_train = extract_features_from_folder(train_path, sensor=SENSOR)
-        #     print("   -> Validação:")
-        #     X_val, y_val     = extract_features_from_folder(valid_path, sensor=SENSOR)
-        #     print("   -> Teste:")
-        #     X_test, y_test   = extract_features_from_folder(test_path, sensor=SENSOR)
-            
-        #     if X_train is None or X_val is None or X_test is None:
-        #         print("ERRO: Falha na extração. Verifique os caminhos CSV.")
-        #         return
-
-        #     print(f"   Dataset pronto: X_train={X_train.shape}, X_test={X_test.shape}")
-
-            # --- Exercicio 3.1 ---
-            #X_train_full = np.vstack([X_train, X_val])
-            #y_train_full = np.concatenate([y_train, y_val])
-            #baseline_classifier(X_train_full, y_train_full, X_test, y_test) 
-
-            # --- EXECUÇÃO 3.2 (kNN) ---
-            #knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test)
-        
-            # --- EXERCICIO 3.3 (ReliefF + Otimização) ---
-            # best_features = relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test)
-
-            # if best_features is not None:
-            #     # --- EXERCICIO 4.1 (Taxa Fixa) ---
-            #     mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, best_features, lr_mode='constant')
-
-            #     # --- EXERCICIO 4.2 (Taxa Variável) ---
-            #     mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, best_features, lr_mode='adaptive')
-            # else:
-            #     print("Saltando MLP (sem features selecionadas).")
-            
 if __name__ == '__main__':
     main()

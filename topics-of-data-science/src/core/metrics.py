@@ -3,8 +3,9 @@ import config as cfg
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
-
+from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
+import pandas as pd
 
 def activity_metric(data_array, sensor='acc', save_dir="data/activity", save_plots=True):
     cols = cfg.SENSOR_COLS[sensor] # colunas correspondentes ao sensor selecionado
@@ -620,8 +621,6 @@ def compute_modulus_all(data_array, sensor='acc'):
 
     return combined_mod
 
-# No final de core/metrics.py
-
 def clean_outliers_zscore(person_matrix, k=4.0):
     """
     Recebe a matriz completa da pessoa (N linhas x 33 colunas).
@@ -668,4 +667,65 @@ def clean_outliers_zscore(person_matrix, k=4.0):
     if count > 0:
         print(f"   [Limpeza Z-Score] Corrigidos {count} pontos nesta pessoa.")
         
+    return cleaned
+
+def clean_outliers_kmeans(person_matrix, n_clusters=5, percentile_threshold=97.0):
+    """
+    Deteta outliers multivariados usando K-Means.
+    1. Agrupa os dados em k clusters.
+    2. Calcula a distância de cada ponto ao centro do seu cluster.
+    3. Pontos com distância superior ao percentil X são marcados como outliers.
+    4. A linha inteira é substituída por interpolação linear.
+    """
+    cleaned = person_matrix.copy()
+    
+    # Colunas de dados (ignora ID, TS e Label)
+    start_col = 2
+    end_col = 32
+    
+    # Extrair apenas os dados dos sensores para o clustering
+    sensor_data = cleaned[:, start_col:end_col]
+    
+    # Proteção contra NaNs/Infs antes do fit
+    sensor_data = np.nan_to_num(sensor_data)
+
+    # 1. Fit K-Means
+    # n_init=10 garante que ele tenta 10 seeds diferentes para achar o melhor centro
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    kmeans.fit(sensor_data)
+    
+    # 2. Calcular distâncias
+    # transform devolve a distância a todos os centros.
+    all_dists = kmeans.transform(sensor_data)
+    # Pegamos a distância mínima (distância ao centro do cluster atribuído)
+    min_dists = np.min(all_dists, axis=1)
+    
+    # 3. Definir Limiar (Threshold)
+    # Cortamos os X% pontos mais distantes (ex: 3% se threshold=97)
+    limit = np.percentile(min_dists, percentile_threshold)
+    
+    # 4. Máscara de Outliers (Linhas a remover)
+    outlier_mask = min_dists > limit
+    n_outliers = np.sum(outlier_mask)
+    
+    if n_outliers > 0:
+        print(f"   [Limpeza K-Means] Removidos {n_outliers} pontos anómalos ({n_outliers/len(cleaned)*100:.1f}%)")
+        
+        # 5. Interpolação
+        # Convertemos para DataFrame para facilitar a interpolação linear
+        df = pd.DataFrame(sensor_data)
+        
+        # Marcamos outliers como NaN
+        df[outlier_mask] = np.nan
+        
+        # Interpolamos (preenche NaN com média dos vizinhos)
+        df = df.interpolate(method='linear', limit_direction='both')
+        
+        # Devolvemos os dados limpos à matriz original
+        # fillna(0) protege caso a interpolação falhe nas bordas
+        cleaned[:, start_col:end_col] = df.values 
+        
+        # Se ainda sobrarem NaNs (muito raro), substitui por 0
+        cleaned = np.nan_to_num(cleaned)
+
     return cleaned

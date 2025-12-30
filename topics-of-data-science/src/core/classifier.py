@@ -10,6 +10,22 @@ from iris_core.iris_metrics import get_metrics, print_metrics
 from skrebate import ReliefF
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+
+# <--- NOVA FUNÇÃO COMPLETA
+def plot_confusion_matrix_heatmap(cm, save_path, title="Confusion Matrix"):
+    plt.figure(figsize=(8, 6))
+    labels = [str(i) for i in range(1, len(cm) + 1)]
+    
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=labels, yticklabels=labels)
+    
+    plt.title(title)
+    plt.ylabel('Verdadeiro (Ground Truth)')
+    plt.xlabel('Previsto (Predicted)')
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150)
+    plt.close()
 
 def evaluate_and_save_metrics(y_true, y_pred, save_path, fold_name="tvt"):
 
@@ -32,14 +48,18 @@ def evaluate_and_save_metrics(y_true, y_pred, save_path, fold_name="tvt"):
     file_path = os.path.join(save_path, f"{fold_name}_metrics.csv")
     metrics_df.to_csv(file_path, index=False)
     
-    # Salvar Matriz de Confusão
+    # Salvar Matriz de Confusão TXT
     cm_file = os.path.join(save_path, f"{fold_name}_confusion_matrix.csv")
     np.savetxt(cm_file, cm, delimiter=";", fmt="%d")
     
+    # <--- NOVO: Salvar Matriz de Confusão como IMAGEM
+    img_file = os.path.join(save_path, f"{fold_name}_cm.png")
+    plot_confusion_matrix_heatmap(cm, img_file, title=f"Confusion Matrix ({fold_name})")
+        
     print(f"[✔] Métricas salvas em {file_path}")
     return metrics_df, cm
 
-def baseline_classifier(X_train, y_train, X_test, y_test, save_dir="data/train_results/results/baseline"):
+def baseline_classifier(X_train, y_train, X_test, y_test, save_dir=None):
     """
     Executa os 3 cenários pedidos para o OneR:
     i) Train-only (Treina e testa em tudo)
@@ -47,6 +67,7 @@ def baseline_classifier(X_train, y_train, X_test, y_test, save_dir="data/train_r
     iii) 10x10 Cross Validation (Usa tudo)
     """
     print("\n" + "="*40 + "\n3.1 CLASSIFICADOR OneR (Baseline)\n" + "="*40)
+    os.makedirs(save_dir, exist_ok=True)
     
     # Definir Modelo OneR (Árvore profundidade 1)
     clf = DecisionTreeClassifier(max_depth=1, criterion='entropy', random_state=42)
@@ -89,7 +110,7 @@ def baseline_classifier(X_train, y_train, X_test, y_test, save_dir="data/train_r
     print(f"Média F1 (100 folds): {np.mean(f1_scores):.4f} (+/- {np.std(f1_scores):.4f})")
     print(f"Média Acc (100 folds): {np.mean(acc_scores):.4f}")
     
-def knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/train_results/results/knn"):
+def knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test, save_dir=None):
     os.makedirs(save_dir, exist_ok=True)
     print("\n" + "="*40 + "\n3.2 kNN Analysis\n" + "="*40)
     
@@ -174,7 +195,7 @@ def knn_analysis(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/
     plt.show() # Remove isto se estiveres a correr em servidor sem ecrã
     print(f"[✔] Gráfico Bias-Variance salvo em {plot_path}")
 '''
-def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/train_results/results/relief"):
+def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir=None):
     os.makedirs(save_dir, exist_ok=True)
     print("\n" + "="*40 + "\n3.3 OTIMIZAÇÃO RELIEFF + kNN (TVT)\n" + "="*40)    
     
@@ -284,7 +305,7 @@ def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/t
 
 from sklearn.utils import resample # <--- IMPORTANTE: Adiciona este import
 
-def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/train_results/results/relieff"):
+def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir=None):
     os.makedirs(save_dir, exist_ok=True)
     print("\n" + "="*40 + "\n3.3 OTIMIZAÇÃO RELIEFF + kNN (TVT)\n" + "="*40)
     
@@ -408,76 +429,101 @@ def relieff_tvt(X_train, y_train, X_val, y_val, X_test, y_test, save_dir="data/t
     
     return best_feats_indices
 
-def mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, selected_features, lr_mode='constant'):
-
-    if lr_mode == 'constant':
-        title = "4.1 MLP - Taxa Fixa"
-        save_dir = "data/train_results/results/mlp_fixed"
-    else:
-        title = "4.2 MLP - Taxa Variável (Adaptive)"
-        save_dir = "data/train_results/results/mlp_variable"
-
+def mlp_experiment(X_train, y_train, X_val, y_val, X_test, y_test, selected_features, save_dir):
     os.makedirs(save_dir, exist_ok=True)
-    print("\n" + "="*40 + f"\n{title}\n" + "="*40)
+    print("\n" + "="*60 + "\n4. MLP EXPERIMENTS (Batch Learning & Learning Rates)\n" + "="*60)
     
-    # 1. FILTRAR FEATURES (Usar apenas as selecionadas no ponto 3.3)
-    print(f">>> A selecionar as {len(selected_features)} melhores features...")
-    X_tr_sel = X_train[:, selected_features]
-    X_val_sel = X_val[:, selected_features]
-    X_ts_sel = X_test[:, selected_features]
-
-    # 2. NORMALIZAR DADOS (Obrigatório para MLP)
-    # Ajustamos o scaler apenas no treino e aplicamos nos outros
+    # --- PREPARAÇÃO ---
+    # 1. Scaling (Obrigatório para MLP)
     scaler = StandardScaler()
-    X_tr_scaled = scaler.fit_transform(X_tr_sel)
-    X_val_scaled = scaler.transform(X_val_sel)
-    X_ts_scaled = scaler.transform(X_ts_sel)
+    X_tr = scaler.fit_transform(X_train[:, selected_features])
+    X_va = scaler.transform(X_val[:, selected_features])
+    X_ts = scaler.transform(X_test[:, selected_features])
 
-    # 3. GRID SEARCH
-    neuron_configs = [10, 50, 100, 200]
+    # 2. Definição de BATCH LEARNING (Requisito do enunciado)
+    # Batch Learning = O tamanho do batch é igual ao tamanho do treino.
+    batch_size_full = len(X_tr) 
+    print(f">>> Configuração: Batch Learning (batch_size={batch_size_full})")
+
+    # --- DEFINIÇÃO DOS CENÁRIOS (4.1 a 4.3) ---
+    
+    # A. Variação de Neurónios na Camada Escondida (Para cumprir "3 camadas")
+    # (50,) -> Input + Hidden(50) + Output = 3 Camadas
+    neuron_configs = [ (20,), (50,), (100,) ] 
+
+    # B. Ativações pedidas
     activations = ['logistic', 'relu']
-    
+
+    # C. Solvers e Learning Rates
+    # O Adam é adicionado para comparação (Discussão 4.4), mas o foco é o SGD
+    configs_lr = [
+        # (Solver, LR_Type, Momentum, Descrição para o Relatório)
+        ('sgd', 'constant', 0.0, '4.1: LR Fixa (Sem Momentum)'),
+        ('sgd', 'adaptive', 0.0, '4.2: LR Variável (Sem Momentum)'),
+        ('sgd', 'adaptive', 0.9, '4.3: LR Variável + Momentum'),
+        ('adam', 'constant', 0.9, 'Extra: Adam (Benchmark)') 
+    ]
+
     results = []
-    best_val_f1 = -1
+    best_f1 = -1
     best_model = None
-    best_params = None
+    best_desc = ""
 
-    print(f"{'Ativação':<10} | {'Neurónios':<10} | {'LR Mode':<10} | {'Val F1':<10}")
-    print("-" * 55)
+    print(f"{'Cenário':<30} | {'Act':<9} | {'Neu':<5} | {'Val F1':<8}")
+    print("-" * 65)
 
-    for act in activations:
-        for neurons in neuron_configs:
-            # Definição do Modelo
-            mlp = MLPClassifier(hidden_layer_sizes=(neurons,), activation=act, learning_rate=lr_mode, learning_rate_init=0.01, batch_size=200, random_state=42, max_iter=500)
-            
-            mlp.fit(X_tr_scaled, y_train)
-            
-            # Validar
-            y_pred_val = mlp.predict(X_val_scaled)
-            f1_val = f1_score(y_val, y_pred_val, average='macro', zero_division=0)
-            
-            print(f"{act:<10} | {neurons:<10} | {lr_mode:<10} | {f1_val:.4f}")
-            
-            results.append({
-                "activation": act,
-                "neurons": neurons,
-                "learning_rate": lr_mode,
-                "f1_val": f1_val
-            })
-            
-            if f1_val > best_val_f1:
-                best_val_f1 = f1_val
-                best_model = mlp
-                best_params = (act, neurons)
+    # --- LOOPS DE TREINO ---
+    for solver, lr_type, mom, desc in configs_lr:
+        for act in activations:
+            for neurons in neuron_configs:
+                
+                # Converter tuplo (50,) para número 50
+                n_hidden = neurons[0]
+                
+                mlp = MLPClassifier(
+                    hidden_layer_sizes=neurons,
+                    activation=act,
+                    solver=solver,
+                    learning_rate=lr_type,
+                    momentum=mom,
+                    batch_size=batch_size_full, # <--- FORÇA O BATCH LEARNING
+                    learning_rate_init=0.01,    # Valor inicial (podes ajustar para 0.001 se 0.01 for instável)
+                    max_iter=1000,              # Mais iterações para garantir convergência em Batch
+                    random_state=42,
+                    early_stopping=True         # Pára se não melhorar
+                )
+                
+                try:
+                    mlp.fit(X_tr, y_train)
+                    
+                    pred_val = mlp.predict(X_va)
+                    f1 = f1_score(y_val, pred_val, average='macro', zero_division=0)
+                    
+                    print(f"{desc:<30} | {act:<9} | {n_hidden:<5} | {f1:.4f}")
+                    
+                    results.append({
+                        "Scenario": desc[:3], # "4.1", "4.2", etc.
+                        "Description": desc,
+                        "Activation": act,
+                        "Neurons": n_hidden,
+                        "Val_F1": f1
+                    })
+                    
+                    if f1 > best_f1:
+                        best_f1 = f1
+                        best_model = mlp
+                        best_desc = f"{desc} | {act} | {n_hidden} neu"
+                        
+                except Exception as e:
+                    print(f"Erro em {desc}: {e}")
 
-    # 4. AVALIAÇÃO FINAL NO TESTE
-    print(f"\n>>> MELHOR CONFIGURAÇÃO ({lr_mode}):")
-    print(f"Ativação: {best_params[0]} | Neurónios: {best_params[1]} | Val F1: {best_val_f1:.4f}")
+    # --- RESULTADOS FINAIS ---
+    print(f"\n>>> MELHOR CONFIGURAÇÃO: {best_desc} (Val F1: {best_f1:.4f})")
     
-    y_pred_test = best_model.predict(X_ts_scaled)
+    y_pred_test = best_model.predict(X_ts)
+    evaluate_and_save_metrics(y_test, y_pred_test, save_dir, fold_name="mlp_final_best")
     
-    print(f"\n--- Resultados Finais MLP {lr_mode} (Test Set) ---")
-    evaluate_and_save_metrics(y_test, y_pred_test, save_dir, fold_name=f"mlp_{lr_mode}_best")
-    
-    # Salvar CSV com histórico
-    pd.DataFrame(results).to_csv(os.path.join(save_dir, "grid_search_results.csv"), index=False)
+    # Guardar CSV para a Discussão (4.4)
+    df_res = pd.DataFrame(results)
+    df_res.to_csv(os.path.join(save_dir, "mlp_batch_experiments.csv"), index=False)
+    print("Tabela de resultados salva para discussão.")

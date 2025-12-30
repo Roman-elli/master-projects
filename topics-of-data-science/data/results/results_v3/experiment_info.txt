@@ -1,0 +1,14 @@
+=== EXPERIÊNCIA results_v3 ===
+Data: 2025-12-28 14:47:05.853599
+
+Configurações:
+- Cleaning Method: ZSCORE
+  > Z-Score Threshold: 4.0
+- Sampling Method: OVER_PERSON
+- Window Size: 2000ms
+- Overlap: 0.5
+
+Dados:
+- Treino: 8470 amostras
+- Validação: 3874 amostras
+- Teste: 4721 amostras

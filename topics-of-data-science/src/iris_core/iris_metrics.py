@@ -1,4 +1,8 @@
-from sklearn.model_selection import train_test_split, RepeatedKFold, StratifiedKFold
+import os
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split, RepeatedKFold
 from sklearn.datasets import load_iris
 from sklearn.dummy import DummyClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -6,12 +10,13 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, confusion_matrix
 from skrebate import ReliefF
 
-import numpy as np
-import matplotlib.pyplot as plt
+# ==========================================
+# CONFIGURAÇÃO DE LOGGING SIMPLES
+# ==========================================
+# Cria a pasta se não existir
+if not os.path.exists("iris_results"):
+    os.makedirs("iris_results")
 
-# ==========================================
-# FUNÇÕES UTILITÁRIAS
-# ==========================================
 
 def get_metrics(y_true, y_pred):
     """Calcula e retorna dicionário de métricas."""
@@ -102,9 +107,7 @@ def run_2_2_knn_analysis(X, y):
     k_values = range(1, 16, 2)
     
     # TVT Split (40-30-30 aproximado)
-    # Primeiro tiramos 30% Teste
     X_temp, X_test, y_temp, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
-    # Do resto, tiramos Validação (30% do total original ~= 43% do que sobrou)
     X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.43, random_state=42, stratify=y_temp)
     
     train_errors = []
@@ -125,7 +128,7 @@ def run_2_2_knn_analysis(X, y):
         
         print(f"{k:<5} | {train_f1:.3f}      | {val_f1:.3f}")
         
-    # 2.2.3 Plot Bias-Variance (Erro treino vs Erro Validação)
+    # 2.2.3 Plot Bias-Variance
     plt.figure(figsize=(8, 5))
     plt.plot(k_values, train_errors, label='Erro Treino (Bias)', marker='o')
     plt.plot(k_values, [1-x for x in val_scores], label='Erro Validação (Variance)', marker='s')
@@ -134,8 +137,10 @@ def run_2_2_knn_analysis(X, y):
     plt.title('2.2.3 Análise Bias-Variance kNN')
     plt.legend()
     plt.grid(True)
-    plt.show()
-    print("[Info] Gráfico Bias-Variance gerado.")
+    # SALVAR
+    plt.savefig("iris_results/2_2_bias_variance.png")
+    plt.show() # Opcional: manter se quiseres ver na execução
+    print("Gráfico Bias-Variance salvo em 'iris_results/2_2_bias_variance.png'")
 
 #Exercicio 2.3
 def run_2_3_relief_tvt(X, y, title_suffix=""):
@@ -192,7 +197,13 @@ def run_2_3_relief_tvt(X, y, title_suffix=""):
     plt.xlabel("Número de Features")
     plt.ylabel("Melhor F1 no Val")
     plt.grid()
+    
+    # SALVAR
+    suffix_clean = title_suffix.strip().replace(" ", "_").lower()
+    fname = f"iris_results/2_3_cotovelo{'_'+suffix_clean if suffix_clean else ''}.png"
+    plt.savefig(fname)
     plt.show()
+    print(f"Gráfico Cotovelo salvo em '{fname}'")
     
     # 2.3.6 Modelo Final
     best_n, best_k, best_feats = best_config
@@ -231,17 +242,13 @@ def run_2_4_relief_cv(X, y):
         ranked = fs.top_features_
         
         # 2. Otimização (Features + K) usando 'Validation' interno ou heurística
-        # Aqui vamos simplificar: testamos todas as combs e guardamos a performance para a média
-        
         best_fold_f1 = -1
-        best_fold_config = None
         
         # Loop para recolher dados para o gráfico médio (2.4.2)
         for n_feat in range(1, X.shape[1]+1):
             sel_feats = ranked[:n_feat]
             
-            # Otimizar K internamente seria o ideal (nested CV), 
-            # mas vamos assumir k=3 fixo ou uma heurística para o gráfico
+            # Assumindo k=3 fixo para simplificar o loop e gerar gráfico rápido
             knn = KNeighborsClassifier(n_neighbors=3) 
             knn.fit(X_train_cv[:, sel_feats], y_train_cv)
             y_pred = knn.predict(X_test_cv[:, sel_feats])
@@ -251,20 +258,23 @@ def run_2_4_relief_cv(X, y):
             
             if f1 > best_fold_f1:
                 best_fold_f1 = f1
-                best_fold_config = (n_feat, 3, sel_feats) # Assumindo k=3 para simplificar o loop
         
         fold_results.append(best_fold_f1)
         
     # 2.4.2 Gráfico Médio
-    means = [np.mean(features_count_perf[i]) for i in range(1, 5)]
-    stds = [np.std(features_count_perf[i]) for i in range(1, 5)]
+    means = [np.mean(features_count_perf[i]) for i in range(1, X.shape[1]+1)]
+    stds = [np.std(features_count_perf[i]) for i in range(1, X.shape[1]+1)]
     
     plt.figure()
-    plt.errorbar(range(1, 5), means, yerr=stds, fmt='-o', capsize=5)
+    plt.errorbar(range(1, X.shape[1]+1), means, yerr=stds, fmt='-o', capsize=5)
     plt.title("2.4.2 Performance Média vs Features (10CV)")
     plt.xlabel("# Features")
     plt.ylabel("F1 Score Médio")
     plt.grid()
+    
+    # SALVAR
+    plt.savefig("iris_results/2_4_cv_performance.png")
     plt.show()
+    print("Gráfico CV salvo em 'iris_results/2_4_cv_performance.png'")
     
     print(f"Média F1 Melhores Modelos: {np.mean(fold_results):.3f} (+/- {np.std(fold_results):.3f})")

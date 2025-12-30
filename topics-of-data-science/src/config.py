@@ -5,10 +5,8 @@ BASE_DATA_PATH = "data/features"
 FEATURES_SOURCE_PATH = "data/features_550_final"
 DATASET_OUTPUT_PATH = "data/dataset_550_balanced_norm"
 
-
-
 PCA_THRESHOLD = 0.75
-LABELS_COUNTER = 16
+LABELS_COUNTER = 7
 
 SENSORS = ['acc', 'gyro']
 ACTIVITIES = range(1, 17)
@@ -22,7 +20,14 @@ SENSOR_COLS = {
 BODY_PARTS_PATH = ["Left_Wrist", "Right_Wrist", "Chest", "Right_Upper_Leg", "Left_Lower_Leg"]
 BODY_PARTS = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Lower Leg"]
 
-    # Configurações de janela
+# Configurações de janela
 WINDOW_SIZE = 2000
 OVERLAP = 0.5
 FS = 51.2
+
+# Setup treino
+
+Z_SCORE_VALUE = 4.0
+KMEANS_THRESHOLD_VALUE = 97.0 # Remove os 3% pontos mais distantes (outliers)
+SAMPLING_METHOD  = 'OVER_PERSON' # Opções: 'UNDER', 'OVER_PERSON'
+CLEANING_METHOD  = 'NONE'  # Opções: 'ZSCORE', 'KMEANS', 'NONE'

@@ -27,5 +27,6 @@ def main():
     # Repetir 2.3 com dados desequilibrados
     run_2_3_relief_tvt(X_imb, y_imb, title_suffix="(Imbalanced)")
 
+
 if __name__ == '__main__':
     main()
