@@ -1,0 +1,13 @@
+=== EXPERIÊNCIA results_v6 ===
+Data: 2025-12-28 18:36:48.712701
+
+Configurações:
+- Cleaning Method: NONE
+- Sampling Method: UNDER
+- Window Size: 2000ms
+- Overlap: 0.5
+
+Dados:
+- Treino: 2086 amostras
+- Validação: 3874 amostras
+- Teste: 4721 amostras

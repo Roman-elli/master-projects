@@ -2,9 +2,11 @@
 ASSETS_FOLDERS_PATH = "assets/"
 SPLIT_ASSETS_FOLDERS_PATH = "split_assets/"
 BASE_DATA_PATH = "data/features"
+FEATURES_SOURCE_PATH = "data/features_550_final"
+DATASET_OUTPUT_PATH = "data/dataset_550_balanced_norm"
 
 PCA_THRESHOLD = 0.75
-LABELS_COUNTER = 16
+LABELS_COUNTER = 7
 
 SENSORS = ['acc', 'gyro']
 ACTIVITIES = range(1, 17)
@@ -22,3 +24,10 @@ BODY_PARTS = ["Left Wrist", "Right Wrist", "Chest", "Right Upper Leg", "Left Low
 WINDOW_SIZE = 2000
 OVERLAP = 0.5
 FS = 51.2
+
+# Setup treino
+
+Z_SCORE_VALUE = 4.0
+KMEANS_THRESHOLD_VALUE = 97.0 # Remove os 3% pontos mais distantes (outliers)
+SAMPLING_METHOD  = 'OVER_PERSON' # Opções: 'UNDER', 'OVER_PERSON'
+CLEANING_METHOD  = 'NONE'  # Opções: 'ZSCORE', 'KMEANS', 'NONE'

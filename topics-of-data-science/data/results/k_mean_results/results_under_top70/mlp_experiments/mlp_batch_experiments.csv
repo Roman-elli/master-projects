@@ -1,0 +1,25 @@
+Scenario,Description,Activation,Neurons,Val_F1
+4.1,4.1: LR Fixa (Sem Momentum),logistic,20,0.06066255893305357
+4.1,4.1: LR Fixa (Sem Momentum),logistic,50,0.26260692477221903
+4.1,4.1: LR Fixa (Sem Momentum),logistic,100,0.029081514358583686
+4.1,4.1: LR Fixa (Sem Momentum),relu,20,0.4479511629096513
+4.1,4.1: LR Fixa (Sem Momentum),relu,50,0.4675660851135072
+4.1,4.1: LR Fixa (Sem Momentum),relu,100,0.4522377500440521
+4.2,4.2: LR Variável (Sem Momentum),logistic,20,0.0657170292827515
+4.2,4.2: LR Variável (Sem Momentum),logistic,50,0.2716368708363105
+4.2,4.2: LR Variável (Sem Momentum),logistic,100,0.18590060063741323
+4.2,4.2: LR Variável (Sem Momentum),relu,20,0.4479511629096513
+4.2,4.2: LR Variável (Sem Momentum),relu,50,0.4675660851135072
+4.2,4.2: LR Variável (Sem Momentum),relu,100,0.4522377500440521
+4.3,4.3: LR Variável + Momentum,logistic,20,0.4661565228351608
+4.3,4.3: LR Variável + Momentum,logistic,50,0.5223727508323259
+4.3,4.3: LR Variável + Momentum,logistic,100,0.45046078575069187
+4.3,4.3: LR Variável + Momentum,relu,20,0.5711167414833885
+4.3,4.3: LR Variável + Momentum,relu,50,0.5838676704590657
+4.3,4.3: LR Variável + Momentum,relu,100,0.5233724300080366
+Ext,Extra: Adam (Benchmark),logistic,20,0.5141428264076148
+Ext,Extra: Adam (Benchmark),logistic,50,0.497525414296473
+Ext,Extra: Adam (Benchmark),logistic,100,0.4872606339669769
+Ext,Extra: Adam (Benchmark),relu,20,0.5881933544512655
+Ext,Extra: Adam (Benchmark),relu,50,0.5441725610988899
+Ext,Extra: Adam (Benchmark),relu,100,0.49786556728145454

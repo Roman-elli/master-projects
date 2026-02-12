@@ -1,0 +1,15 @@
+=== EXPERIÊNCIA results_v7 ===
+Data: 2025-12-29 22:38:01.792968
+
+Configurações:
+- Cleaning Method: KMEANS
+  > KMeans Clusters: 7
+  > Threshold Percentile: 97.0
+- Sampling Method: UNDER
+- Window Size: 2000ms
+- Overlap: 0.5
+
+Dados:
+- Treino: 3878 amostras
+- Validação: 3874 amostras
+- Teste: 8486 amostras
