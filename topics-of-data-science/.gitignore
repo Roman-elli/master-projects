@@ -1,2 +1,4 @@
 # Ignore build, data, ... files
 **/__pycache__
+data/
+split_assets/
