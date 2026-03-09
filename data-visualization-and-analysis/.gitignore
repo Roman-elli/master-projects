@@ -3,3 +3,4 @@ assets/
 data/
 **/__pycache__
 class_study/
+**__pycache__
