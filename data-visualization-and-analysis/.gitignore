@@ -1,3 +1,5 @@
 # Ignore data, files...
 assets/
+data/
 **/__pycache__
+class_study/
