@@ -1,1 +1,4 @@
-/assets
+# Ignoring files, folders...
+assets/
+docs/
+**__pycache__/
