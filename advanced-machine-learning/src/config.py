@@ -2,13 +2,6 @@
 from pathlib import Path
 import os
 
-images_path = Path().cwd()  / "../assets/images"
-labels_path = Path().cwd()  / "../assets/labels"
-
-TRAIN_IMG_DIR = os.path.join(images_path, 'train')
-TRAIN_LABELS_PATH = os.path.join(labels_path, 'train_labels.csv')
-
-
 # Dataset variables
 BATCH_SIZE = 32
 IMAGE_SIZE = 64
@@ -18,9 +11,28 @@ IMAGE_SIZE = 64
 MLP_EPOCHS = 50
 MLP_HIDDEN_LAYER_SIZES = [1024, 512]
 MLP_LR = 0.001
-MLP_LOSS_FUNCTION = "MultiMarginLoss" #  "CrossEntropy"
-MLP_OPTIM = "RMSprop" # "ADAM"
+
+# Opções de Loss: "CrossEntropy" | "MultiMarginLoss" | "CrossEntropy_LabelSmoothing"
+MLP_LOSS_FUNCTION = "CrossEntropy" 
+
+MLP_LABEL_SMOOTHING = 0.1 # Utilizado com a loss function CrossEntropy_LabelSmoothing
+
+# Opções de Otimizador: "ADAM" | "RMSprop" | "ADAMW" | "SGD"
+MLP_OPTIM = "ADAMW"
+
+MLP_WEIGHT_DECAY = 0.01 # Utilizado com o otimizador ADAMW
+MLP_MOMENTUM = 0.9 # Utilizado com o otimizador SGD
 
 ## CNN ##
 
 ## ResNet ##
+
+# Path Variables
+images_path = Path().cwd() / ".." / "assets" / "images"
+labels_path = Path().cwd() / ".." / "assets" / "labels"
+
+mlp_results_folder_name = f"MLP_Ep{MLP_EPOCHS}_{MLP_LOSS_FUNCTION}_{MLP_OPTIM}"
+mlp_results_path = Path().cwd() / ".." / "results" / "MLP" / mlp_results_folder_name
+
+TRAIN_IMG_DIR = images_path / 'train'
+TRAIN_LABELS_PATH = labels_path / 'train_labels.csv'
