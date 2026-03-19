@@ -26,37 +26,6 @@ class MLP(nn.Module):
             self.layers.append(nn.Linear(hidden_sizes[-1], num_classes))
     
     def forward(self, x):
-
-        x = x.view(x.size(0), -1)
-
-        for ix in range (len(self.layers) - 1):
-            x = self.layers[ix](x)
-            x = self.activations[ix](x)
-        return self.layers[-1](x)
-    
-
-class MLP(nn.Module):
-    def __init__(self, input_size, hidden_sizes, num_classes):
-        super(MLP, self).__init__()
-        self.layers = nn.ModuleList()
-        self.activations = nn.ModuleList()
-
-        if len(hidden_sizes) == 0:
-            self.layers.append(nn.Linear(input_size, num_classes))
-        else:
-            # 1ª Camada (Input -> 1ª Oculta)
-            self.layers.append(nn.Linear(input_size, hidden_sizes[0]))
-            self.activations.append(nn.ReLU())        
-            
-            # Camadas Ocultas
-            for i in range(len(hidden_sizes)-1):
-                self.layers.append(nn.Linear(hidden_sizes[i], hidden_sizes[i+1]))
-                self.activations.append(nn.ReLU())
-
-            # Última camada (Última Oculta -> Classes de Saída)
-            self.layers.append(nn.Linear(hidden_sizes[-1], num_classes))
-    
-    def forward(self, x):
         x = x.view(x.size(0), -1)
 
         for ix in range (len(self.layers) - 1):
@@ -74,7 +43,6 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
     # Variáveis para rastrear o melhor modelo
     best_val_acc = 0.0
     best_model_wts = copy.deepcopy(nn.state_dict())
-
     for epoch in range(n_epochs):
         
         # FASE DE TREINO

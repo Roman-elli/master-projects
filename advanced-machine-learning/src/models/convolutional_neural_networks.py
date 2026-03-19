@@ -80,6 +80,9 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
 import torch
 import torch.nn as nn
 from torch.functional import F
+import copy
+import config as cfg
+from utils.io import save_best_model
 
 class CNN(nn.Module):
     def __init__(self, input_channels=3, num_classes=10):
@@ -175,6 +178,10 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
     train_acc_values = []
     val_acc_values = []
 
+    # Variáveis para rastrear o melhor modelo
+    best_val_acc = 0.0
+    best_model_wts = copy.deepcopy(nn.state_dict())
+
     for epoch in range(n_epochs):
         # --- TREINO ---
         nn.train() 
@@ -186,7 +193,7 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             
             outputs = nn(X_batch)
-            loss = criterion(outputs, y_batch) # Continuamos a precisar disto para a rede aprender!
+            loss = criterion(outputs, y_batch)
             
             # Atualizar os pesos
             optimizer.zero_grad()
@@ -224,7 +231,24 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
         epoch_val_acc = correct_val / total_val
         val_acc_values.append(epoch_val_acc)
 
-        # Imprimir os resultados em percentagem (opcionalmente podes multiplicar por 100)
-        print(f'Epoch [{epoch+1}/{n_epochs}], Train Acc: {epoch_train_acc:.4f} | Val Acc: {epoch_val_acc:.4f}')
+        # Imprimir os resultados em percentagem
+        print(f'Epoch [{epoch+1}/{n_epochs}], Train Acc: {epoch_train_acc*100:.4f}% | Val Acc: {epoch_val_acc*100:.4f}%')
     
+        # Atualizar os melhores pesos se a validação melhorar
+        if epoch_val_acc > best_val_acc:
+            best_val_acc = epoch_val_acc
+            best_model_wts = copy.deepcopy(nn.state_dict())
+
+    
+     # Carregar os melhores pesos de volta para o modelo
+    print(f"\nTreino concluído. A restaurar os pesos do melhor modelo (Val Acc: {best_val_acc*100:.2f}%)...")
+    nn.load_state_dict(best_model_wts)
+
+    if cfg.AUGMENT_DATA:
+        save_dir = cfg.cnn_results_path_augmented
+    else:
+        save_dir = cfg.cnn_results_path
+
+    save_best_model(best_model_wts, save_dir=save_dir)
+
     return train_acc_values, val_acc_values, nn.to("cpu")

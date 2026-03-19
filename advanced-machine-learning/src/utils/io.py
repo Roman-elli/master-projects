@@ -28,9 +28,8 @@ def save_best_model(model_state_dict, save_dir, file_name="best.pt"):
     torch.save(model_state_dict, save_path)
     print(f"\nMelhor modelo guardado com sucesso em: {save_path}")
     
-
 def save_acc_graph(train_losses, val_losses, file_name, folder_name, model_type=""):
-    epochs_range = range(1, cfg.MLP_EPOCHS + 1)
+    epochs_range = range(1, len(train_losses) + 1)
         
     os.makedirs(file_name, exist_ok=True)
     
