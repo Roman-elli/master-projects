@@ -79,7 +79,7 @@ def evaluate_network(net, dataloader, device="cpu", save_path=None, split_name="
 
     return f1, conf_mat
 
-def save_loss_graph(train_losses, val_losses, file_name, folder_name):
+def save_acc_graph(train_losses, val_losses, file_name, folder_name, model_type=""):
     epochs_range = range(1, cfg.MLP_EPOCHS + 1)
         
     os.makedirs(file_name, exist_ok=True)
@@ -89,14 +89,14 @@ def save_loss_graph(train_losses, val_losses, file_name, folder_name):
     plt.plot(epochs_range, train_losses, marker='o', linestyle='-', color='blue', label='Treino (Train Loss)')
     plt.plot(epochs_range, val_losses, marker='s', linestyle='--', color='red', label='Validação (Valid Loss)')
 
-    plt.title(f"Evolução da Loss - MLP\n{folder_name}", fontsize=10)
+    plt.title(f"Evolução da Acc - {model_type}\n{folder_name}", fontsize=10)
     plt.xlabel('Épocas')
-    plt.ylabel('Loss (Erro Médio)')
+    plt.ylabel('ACCuracy')
     plt.grid(True, linestyle=':', alpha=0.7)
     plt.legend()
 
     # CORREÇÃO AQUI: Criar o ficheiro dentro da pasta com a extensão .png
-    file_path = file_name / "loss_curve.png"
+    file_path = file_name / "acc_curve.png"
     plt.savefig(file_path, dpi=300, bbox_inches='tight')
     print(f"Gráfico guardado com sucesso...")
     

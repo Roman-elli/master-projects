@@ -118,7 +118,7 @@ class CNN(nn.Module):
         x = self.fc2(x)
         return x
     
-
+'''
 def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to_device=True, device="cpu"):
     if to_device:
         nn = nn.to(device)
@@ -128,7 +128,7 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
 
     for epoch in range(n_epochs):
         # --- TREINO ---
-        nn.train() # Super importante agora que temos Dropout! (Liga o Dropout)
+        nn.train() 
         accu_train_loss = 0
         
         for X_batch, y_batch in train_dataloader:
@@ -147,7 +147,7 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
         train_loss_values.append(avg_train_loss)
 
         # --- VALIDAÇÃO ---
-        nn.eval() # Super importante! (Desliga o Dropout para a validação)
+        nn.eval()
         accu_val_loss = 0
         
         with torch.no_grad():
@@ -165,3 +165,66 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
         print(f'Epoch [{epoch+1}/{n_epochs}], Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}')
     
     return train_loss_values, val_loss_values, nn.to("cpu")
+'''
+
+def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to_device=True, device="cpu"):
+    if to_device:
+        nn = nn.to(device)
+
+    # Listas para guardar a accuracy em vez da loss
+    train_acc_values = []
+    val_acc_values = []
+
+    for epoch in range(n_epochs):
+        # --- TREINO ---
+        nn.train() 
+        correct_train = 0
+        total_train = 0
+        
+        for X_batch, y_batch in train_dataloader:
+            if to_device:
+                X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+            
+            outputs = nn(X_batch)
+            loss = criterion(outputs, y_batch) # Continuamos a precisar disto para a rede aprender!
+            
+            # Atualizar os pesos
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            # Calcular Accuracy do batch
+            # torch.max devolve o valor máximo e o índice (que é a classe prevista)
+            _, predicted = torch.max(outputs.data, 1)
+            total_train += y_batch.size(0) # Adiciona o número de imagens no batch
+            correct_train += (predicted == y_batch).sum().item() # Conta quantas acertou
+            
+        # Calcular Accuracy da época de treino (Acertos / Total)
+        epoch_train_acc = correct_train / total_train
+        train_acc_values.append(epoch_train_acc)
+
+        # --- VALIDAÇÃO ---
+        nn.eval()
+        correct_val = 0
+        total_val = 0
+        
+        with torch.no_grad():
+            for X_val, y_val in val_dataloader:
+                if to_device:
+                    X_val, y_val = X_val.to(device), y_val.to(device)
+                    
+                val_outputs = nn(X_val)
+                
+                # Calcular Accuracy do batch de validação
+                _, predicted_val = torch.max(val_outputs.data, 1)
+                total_val += y_val.size(0)
+                correct_val += (predicted_val == y_val).sum().item()
+                
+        # Calcular Accuracy da época de validação
+        epoch_val_acc = correct_val / total_val
+        val_acc_values.append(epoch_val_acc)
+
+        # Imprimir os resultados em percentagem (opcionalmente podes multiplicar por 100)
+        print(f'Epoch [{epoch+1}/{n_epochs}], Train Acc: {epoch_train_acc:.4f} | Val Acc: {epoch_val_acc:.4f}')
+    
+    return train_acc_values, val_acc_values, nn.to("cpu")

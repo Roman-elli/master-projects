@@ -7,6 +7,9 @@ BATCH_SIZE = 32
 IMAGE_SIZE = 64
 
 # Model variables
+
+TEST_SIZE = 0.3
+
 ## MLP ##
 MLP_EPOCHS = 50
 MLP_HIDDEN_LAYER_SIZES = [1024, 512]
@@ -27,6 +30,7 @@ MLP_MOMENTUM = 0.9 # Utilizado com o otimizador SGD
 CNN_EPOCHS = 50
 CNN_HIDDEN_LAYER_SIZES = [1024, 512]
 CNN_LR = 0.001
+#CNN_LR = 0.01 para SGD
 
 # Opções de Loss: "CrossEntropy" | "MultiMarginLoss" | "CrossEntropy_LabelSmoothing"
 CNN_LOSS_FUNCTION = "CrossEntropy" 
@@ -34,7 +38,7 @@ CNN_LOSS_FUNCTION = "CrossEntropy"
 CNN_LABEL_SMOOTHING = 0.1 # Utilizado com a loss function CrossEntropy_LabelSmoothing
 
 # Opções de Otimizador: "ADAM" | "RMSprop" | "ADAMW" | "SGD"
-CNN_OPTIM = "ADAMW"
+CNN_OPTIM = "SGD"
 
 CNN_WEIGHT_DECAY = 0.01 # Utilizado com o otimizador ADAMW
 CNN_MOMENTUM = 0.9 # Utilizado com o otimizador SGD
