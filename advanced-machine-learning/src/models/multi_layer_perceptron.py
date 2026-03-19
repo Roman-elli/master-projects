@@ -28,16 +28,21 @@ class MLP(nn.Module):
             x = self.activations[ix](x)
         return self.layers[-1](x)
     
-def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to_device=True, device="cpu"):
-    if to_device:
-        nn = nn.to(device)
+import torch
 
-    train_loss_values = []
-    val_loss_values = []
+def fit(train_dataloader, val_dataloader, nn_model, criterion, optimizer, n_epochs, to_device=True, device="cpu"):
+    if to_device:
+        nn_model = nn_model.to(device)
+
+    train_acc_values = []
+    val_acc_values = []
 
     for epoch in range(n_epochs):
-        nn.train()
-        accu_train_loss = 0
+        
+        # FASE DE TREINO
+        nn_model.train()
+        correct_train = 0  # Imagens que acertámos
+        total_train = 0    # Total de imagens vistas
         
         for X_batch, y_batch in train_dataloader:
             if to_device:
@@ -45,21 +50,28 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
                 
             X_batch = X_batch.view(X_batch.size(0), -1) # Flatten
 
-            outputs = nn(X_batch)
-            loss = criterion(outputs, y_batch)
-            accu_train_loss += loss.item()
+            # Forward pass
+            outputs = nn_model(X_batch)
+            loss = criterion(outputs, y_batch) # A Loss continua a ser calculada porque o otimizador precisa dela!
             
+            # Backward and optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
-        # Calcular média para não depender do tamanho do dataset
-        avg_train_loss = accu_train_loss / len(train_dataloader)
-        train_loss_values.append(avg_train_loss)
+            # 2. Calcular Accuracy do Batch
+            _, predicted = torch.max(outputs.data, 1) # Pega na classe com maior pontuação
+            total_train += y_batch.size(0)            # Soma o número de imagens no batch (ex: 32)
+            correct_train += (predicted == y_batch).sum().item() # Soma quantas acertou
+            
+        # Calcular média da Accuracy da Época (0.0 a 1.0)
+        epoch_train_acc = correct_train / total_train
+        train_acc_values.append(epoch_train_acc)
 
-        # Validação
-        nn.eval()
-        accu_val_loss = 0
+        # FASE DE VALIDAÇÃO
+        nn_model.eval()
+        correct_val = 0
+        total_val = 0
         
         with torch.no_grad():
             for X_val, y_val in val_dataloader:
@@ -68,14 +80,17 @@ def fit(train_dataloader, val_dataloader, nn, criterion, optimizer, n_epochs, to
                     
                 X_val = X_val.view(X_val.size(0), -1) # Flatten
 
-                val_outputs = nn(X_val)
-                val_loss = criterion(val_outputs, y_val)
-                accu_val_loss += val_loss.item()
+                val_outputs = nn_model(X_val)
                 
-        # Calcular média
-        avg_val_loss = accu_val_loss / len(val_dataloader)
-        val_loss_values.append(avg_val_loss)
+                # 3. Calcular Accuracy do Batch (Validação)
+                _, predicted = torch.max(val_outputs.data, 1)
+                total_val += y_val.size(0)
+                correct_val += (predicted == y_val).sum().item()
+                
+        epoch_val_acc = correct_val / total_val
+        val_acc_values.append(epoch_val_acc)
 
-        print(f'Epoch [{epoch+1}/{n_epochs}], Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}')
+        print(f'Epoch [{epoch+1}/{n_epochs}], Train Acc: {epoch_train_acc*100:.2f}% | Val Acc: {epoch_val_acc*100:.2f}%')
     
-    return train_loss_values, val_loss_values, nn.to("cpu")
+    # 4. Devolver as listas de Accuracy
+    return train_acc_values, val_acc_values, nn_model.to("cpu")
