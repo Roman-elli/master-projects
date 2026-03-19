@@ -5,10 +5,10 @@ import os
 # Dataset variables
 BATCH_SIZE = 32
 IMAGE_SIZE = 64
+TEST_SIZE = 0.2
+DATA_AUG_SIZE = 5500
 
 # Model variables
-
-TEST_SIZE = 0.3
 
 ## MLP ##
 MLP_EPOCHS = 50
@@ -21,10 +21,11 @@ MLP_LOSS_FUNCTION = "CrossEntropy"
 MLP_LABEL_SMOOTHING = 0.1 # Utilizado com a loss function CrossEntropy_LabelSmoothing
 
 # Opções de Otimizador: "ADAM" | "RMSprop" | "ADAMW" | "SGD"
-MLP_OPTIM = "ADAMW"
+MLP_OPTIM = "ADAM"
 
 MLP_WEIGHT_DECAY = 0.01 # Utilizado com o otimizador ADAMW
 MLP_MOMENTUM = 0.9 # Utilizado com o otimizador SGD
+
 
 ## CNN ##
 CNN_EPOCHS = 50
@@ -43,7 +44,14 @@ CNN_OPTIM = "SGD"
 CNN_WEIGHT_DECAY = 0.01 # Utilizado com o otimizador ADAMW
 CNN_MOMENTUM = 0.9 # Utilizado com o otimizador SGD
 
+
 ## ResNet ##
+
+
+
+
+
+
 
 # Path Variables
 images_path = Path().cwd() / ".." / "assets" / "images"

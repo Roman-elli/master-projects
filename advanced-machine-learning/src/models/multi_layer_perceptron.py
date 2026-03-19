@@ -23,6 +23,9 @@ class MLP(nn.Module):
             self.layers.append(nn.Linear(hidden_sizes[-1], num_classes))
     
     def forward(self, x):
+
+        x = x.view(x.size(0), -1)
+
         for ix in range (len(self.layers) - 1):
             x = self.layers[ix](x)
             x = self.activations[ix](x)
@@ -48,8 +51,6 @@ def fit(train_dataloader, val_dataloader, nn_model, criterion, optimizer, n_epoc
             if to_device:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 
-            X_batch = X_batch.view(X_batch.size(0), -1) # Flatten
-
             # Forward pass
             outputs = nn_model(X_batch)
             loss = criterion(outputs, y_batch) # A Loss continua a ser calculada porque o otimizador precisa dela!

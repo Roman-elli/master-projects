@@ -31,7 +31,7 @@ def analyze_df(df, train_dataset):
 
 # utils/metrics.py
 
-def evaluate_network(net, dataloader, device="cpu", save_path=None, split_name="Avaliacao", is_cnn=False):
+def evaluate_network(net, dataloader, device="cpu", save_path=None, split_name="Avaliacao"):
     net.eval()
     net = net.to(device)
 
@@ -39,12 +39,7 @@ def evaluate_network(net, dataloader, device="cpu", save_path=None, split_name="
     all_labels = []
 
     with torch.no_grad():
-        for images, labels in dataloader:
-            
-            # Se NÃO for CNN (ou seja, se for MLP), fazemos o flatten
-            if not is_cnn:
-                images = images.view(images.size(0), -1)
-                
+        for images, labels in dataloader:                
             # Agora enviamos para o device (sem forçar o nome images_flattened)
             images = images.to(device)
             labels = labels.to(device)
