@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import os
 import torch
-import config as cfg
 
 def print_images(dataset, dataloader):
     images, labels = next(iter(dataloader))

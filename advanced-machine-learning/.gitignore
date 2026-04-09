@@ -1,3 +1,4 @@
 # Ignoring files, folders...
 assets/
 **__pycache__/
+results

@@ -10,6 +10,7 @@ def analyze_df(df, train_dataset):
     num_inputs = sample_img.shape[0] * sample_img.shape[1] * sample_img.shape[2]
     num_classes = len(train_dataset.classes)
     
+    print("#### TRAIN DATASET ####")
     print("-"*30)
     print(f"Número de classes: {num_classes}")
     print(f"Número de inputs para o MLP: {num_inputs}")
@@ -29,8 +30,6 @@ def analyze_df(df, train_dataset):
     
     return num_inputs, num_classes
 
-# utils/metrics.py
-
 def evaluate_network(net, dataloader, device="cpu", save_path=None, split_name="Avaliacao"):
     net.eval()
     net = net.to(device)
@@ -40,7 +39,7 @@ def evaluate_network(net, dataloader, device="cpu", save_path=None, split_name="
 
     with torch.no_grad():
         for images, labels in dataloader:                
-            # Agora enviamos para o device (sem forçar o nome images_flattened)
+            # enviamos para o device (sem forçar images_flattened)
             images = images.to(device)
             labels = labels.to(device)
             

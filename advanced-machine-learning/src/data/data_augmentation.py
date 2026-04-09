@@ -4,7 +4,7 @@ from torch.utils.data import WeightedRandomSampler
 import config as cfg
 
 def apply_data_augmentation(df_train):
-    # 1. Transformações de Treino SOTA (com Random Erasing para robustez)
+    # 1. Transformações de Treino
     train_transform = transforms.Compose([
         transforms.Resize((cfg.IMAGE_SIZE, cfg.IMAGE_SIZE)),
         transforms.RandomHorizontalFlip(p=0.5),
@@ -14,16 +14,13 @@ def apply_data_augmentation(df_train):
         transforms.RandomErasing(p=0.2, scale=(0.02, 0.2), ratio=(0.3, 3.3), value=0) 
     ])
 
-    # 2. Transformações de Validação (Limpo, sem ruído)
+    # 2. Transformações de Validação
     val_transform = transforms.Compose([
         transforms.Resize((cfg.IMAGE_SIZE, cfg.IMAGE_SIZE)),
         transforms.ToTensor()
     ])
 
     # 3. Weighted Sampler para o desbalanceamento
-    
-    # Contamos as classes, mas deixamos como uma "Series" do Pandas 
-    # (assim ele guarda a ligação: 'NomeDaClasse' -> Quantidade)
     class_counts = df_train['label'].value_counts()
     
     # Calculamos o peso

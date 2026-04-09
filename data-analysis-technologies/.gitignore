@@ -1,0 +1,4 @@
+# Ignore Files, folders...
+**__pycache__/
+assets/
+data/
