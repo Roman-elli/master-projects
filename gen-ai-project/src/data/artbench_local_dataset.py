@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import csv
 import pickle
 from pathlib import Path
@@ -7,16 +6,13 @@ import numpy as np
 from datasets import Dataset as HFDataset
 from datasets import DatasetDict, Features, Image, ClassLabel, load_dataset
 
-
 KAGGLE_SOURCE_NAMES = {"kaggle", "local", "artbench10"}
-
 
 def dataset_source_name(dataset_source, default_source="hf"):
     src = str(dataset_source).strip().lower()
     if not src:
         return str(default_source).strip().lower()
     return src
-
 
 def _get_pickle_value(obj, key):
     if key in obj:
@@ -26,13 +22,11 @@ def _get_pickle_value(obj, key):
         return obj[bkey]
     raise KeyError(f"Missing key '{key}' in pickle object")
 
-
 def _resolve_kaggle_paths(kaggle_root):
     root = Path(kaggle_root)
     csv_path = root / "ArtBench-10.csv"
     batch_dir = root / "artbench-10-python" / "artbench-10-batches-py"
     return root, csv_path, batch_dir
-
 
 def load_kaggle_artbench10_splits(kaggle_root):
     root, csv_path, batch_dir = _resolve_kaggle_paths(kaggle_root)
@@ -49,13 +43,17 @@ def load_kaggle_artbench10_splits(kaggle_root):
 
     with open(batch_dir / "meta", "rb") as f:
         meta = pickle.load(f)
+
     styles = _get_pickle_value(meta, "styles")
+
     if not isinstance(styles, list) or len(styles) == 0:
         raise ValueError(f"Could not read class names from {batch_dir / 'meta'}")
+    
     styles = [str(s).strip() for s in styles]
     style_to_id = {name: i for i, name in enumerate(styles)}
 
     csv_label_ids = {"train": {}, "test": {}}
+    
     with open(csv_path, "r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
         required = {"split", "label", "cifar_index"}
@@ -148,7 +146,6 @@ def load_kaggle_artbench10_splits(kaggle_root):
 
     print(f"Dataset source: kaggle root='{root}'")
     return DatasetDict(train=train_ds, test=test_ds)
-
 
 def resolve_dataset_splits(dataset_id, seed=42, dataset_source="hf", kaggle_root="ArtBench-10", default_source="hf"):
     source = dataset_source_name(dataset_source, default_source=default_source)
