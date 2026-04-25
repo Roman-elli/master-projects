@@ -8,34 +8,56 @@ class VAE(nn.Module):
         super().__init__()
         self.latent_dim = latent_dim
 
+        # --- ENCODER MELHORADO ---
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
+            # 32x32 -> 16x16
+            nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(64), # NOVO: Estabiliza o treino
+            nn.LeakyReLU(0.2, inplace=True), # NOVO: Previne "dead neurons"
+            
+            # 16x16 -> 8x8
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.2, inplace=True),
+            
+            # 8x8 -> 4x4
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.2, inplace=True),
+            
             nn.Flatten()
         )
 
-        flattened_dim = 128 * 4 * 4
+        # Atualizado para refletir os 256 canais no nível mais profundo
+        flattened_dim = 256 * 4 * 4
         
+        # Espaço Latente
         self.fc_mu = nn.Linear(flattened_dim, latent_dim)
         self.fc_logvar = nn.Linear(flattened_dim, latent_dim)
 
-        self.decoder_input = nn.Linear(latent_dim, 128 * 4 * 4)
+        # Entrada do Decoder
+        self.decoder_input = nn.Linear(latent_dim, flattened_dim)
         
+        # --- DECODER MELHORADO ---
         self.decoder = nn.Sequential(
+            # 4x4 -> 8x8
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.2, inplace=True),
+            
+            # 8x8 -> 16x16
             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),
-            nn.Sigmoid(),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(0.2, inplace=True),
+            
+            # 16x16 -> 32x32
+            nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1),
+            # NOTA IMPORTANTE: Sigmoid assume que as imagens originais estão entre [0, 1]
+            nn.Sigmoid(), 
         )
 
     def encode(self, x):
-        h = self.encoder(x) # Usa o nome correto
+        h = self.encoder(x)
         return self.fc_mu(h), self.fc_logvar(h)
 
     def reparameterize(self, mu, logvar):
@@ -44,8 +66,7 @@ class VAE(nn.Module):
         return mu + std * eps
 
     def decode(self, z):
-        # Usa o nome correto e altera o 7x7 para 4x4
-        h = self.decoder_input(z).view(-1, 128, 4, 4) 
+        h = self.decoder_input(z).view(-1, 256, 4, 4) 
         return self.decoder(h)
 
     def forward(self, x):
@@ -56,10 +77,11 @@ class VAE(nn.Module):
     
     def sample(self, num_samples, device):
         z = torch.randn(num_samples, self.latent_dim).to(device)
-        z = self.decoder_input(z).view(-1, 128, 4, 4)
+        z = self.decoder_input(z).view(-1, 256, 4, 4) # Alterado para 256
         samples = self.decoder(z)
         return samples
-
+    
+    
 def vae_loss(xhat, x, mu, logvar, beta=0.7):
     recon_loss = F.binary_cross_entropy(xhat, x, reduction='sum') / x.shape[0]
     kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / x.shape[0]

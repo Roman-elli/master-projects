@@ -22,13 +22,13 @@ class SinusoidalPosEmb(nn.Module):
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         # Handle odd dimension by padding if necessary, but dim should be even
         return emb
-
+    
 class ResnetBlock(nn.Module):
     """
     Residual Block with Time Embedding projection.
-    Supports channel dimension changes with short-cut projection.
+    Atualizado com GroupNorm(32) e Dropout para maior estabilidade.
     """
-    def __init__(self, dim, time_emb_dim, out_dim=None):
+    def __init__(self, dim, time_emb_dim, out_dim=None, dropout=0.1): # <- Adicionámos o parâmetro dropout
         super().__init__()
         self.out_dim = out_dim or dim
         self.mlp = nn.Sequential(
@@ -37,10 +37,16 @@ class ResnetBlock(nn.Module):
         )
         self.conv1 = nn.Conv2d(dim, self.out_dim, 3, padding=1)
         self.conv2 = nn.Conv2d(self.out_dim, self.out_dim, 3, padding=1)
-        # GroupNorm tends to work better for diffusion than BatchNorm
-        self.norm1 = nn.GroupNorm(4, dim)
-        self.norm2 = nn.GroupNorm(4, self.out_dim)
+        
+        # --- ALTERAÇÃO 1: 32 Grupos em vez de 4 ---
+        # Na literatura de Difusão, 32 grupos provou ser o "sweet spot"
+        self.norm1 = nn.GroupNorm(32, dim)
+        self.norm2 = nn.GroupNorm(32, self.out_dim)
+        
         self.act = nn.SiLU()
+        
+        # --- ALTERAÇÃO 2: Camada de Dropout ---
+        self.dropout = nn.Dropout(dropout)
         
         # Shortcut for residual if dims don't match
         self.shortcut = nn.Conv2d(dim, self.out_dim, 1) if dim != self.out_dim else nn.Identity()
@@ -49,77 +55,146 @@ class ResnetBlock(nn.Module):
         h = self.norm1(x)
         h = self.act(h)
         h = self.conv1(h)
+        
         # Add time embedding
         time_emb = self.mlp(time_emb)
-        # Expand time_emb to match spatial dimensions [B, C, 1, 1]
         h = h + time_emb[:, :, None, None]
+        
         h = self.norm2(h)
         h = self.act(h)
+        
+        # --- ALTERAÇÃO 2: Aplicar o dropout antes da conv2 ---
+        h = self.dropout(h)
+        
         h = self.conv2(h)
         return self.shortcut(x) + h
+   
+# --- NOVO: Bloco de Atenção introduzido do zero ---
+class AttentionBlock(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.norm = nn.GroupNorm(32, dim)
+        self.q = nn.Conv2d(dim, dim, 1)
+        self.k = nn.Conv2d(dim, dim, 1)
+        self.v = nn.Conv2d(dim, dim, 1)
+        self.proj_out = nn.Conv2d(dim, dim, 1)
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        h = self.norm(x)
+        
+        # Transforma as imagens em sequências para calcular a atenção
+        q = self.q(h).view(B, C, H * W)
+        k = self.k(h).view(B, C, H * W)
+        v = self.v(h).view(B, C, H * W)
+        
+        # Calcula os "pesos" de atenção (quem deve olhar para quem)
+        attn = torch.bmm(q.transpose(1, 2), k) * (int(C) ** (-0.5))
+        attn = F.softmax(attn, dim=2)
+        
+        # Aplica a atenção aos valores
+        out = torch.bmm(v, attn.transpose(1, 2))
+        out = out.view(B, C, H, W)
+        
+        out = self.proj_out(out)
+        return x + out # Conexão residual
     
 class PixelUNet(nn.Module):
-
-    # Alteração: in_channels muda para 3 (RGB) por padrão
-    def __init__(self, in_channels=3, model_channels=64): 
+    # ALTERAÇÃO: in_channels=3 (RGB), model_channels default passa para 128 para maior capacidade
+    def __init__(self, in_channels=3, model_channels=128): 
         super().__init__()
-        # Time Embedding
+        
+        # Time Embedding (mantém-se igual)
         self.time_embed = nn.Sequential(
             SinusoidalPosEmb(model_channels),
             nn.Linear(model_channels, model_channels * 4),
             nn.SiLU(),
             nn.Linear(model_channels * 4, model_channels * 4),
         )
-        
         time_dim = model_channels * 4
         
-        # Initial Conv
+        # Initial Conv (32x32)
         self.init_conv = nn.Conv2d(in_channels, model_channels, 3, padding=1)
         
+        # --- DESCIDA (DOWN) ---
         # Down 1: 32x32 -> 16x16
-        self.down1_res = ResnetBlock(model_channels, time_dim)
+        self.down1_res = ResnetBlock(model_channels, time_dim, out_dim=model_channels)
         self.down1_pool = nn.Conv2d(model_channels, model_channels, 3, stride=2, padding=1)
         
-        # Down 2: 16x16 -> 8x8
+        # Down 2: 16x16 -> 8x8 (Duplica os canais)
         self.down2_res = ResnetBlock(model_channels, time_dim, out_dim=model_channels * 2)
         self.down2_pool = nn.Conv2d(model_channels * 2, model_channels * 2, 3, stride=2, padding=1)
         
-        # Middle (8x8)
+        # Down 3: 8x8 -> 4x4 (Mantém os canais duplicados - Standard em DDPM)
+        self.down3_res = ResnetBlock(model_channels * 2, time_dim, out_dim=model_channels * 2)
+        self.down3_pool = nn.Conv2d(model_channels * 2, model_channels * 2, 3, stride=2, padding=1)
+        
+        # --- MEIO (MIDDLE - 4x4) ---
         self.mid_res1 = ResnetBlock(model_channels * 2, time_dim)
+        # Nota: É aqui no meio que vamos injetar a Atenção na Fase 3!
+        # --- NOVO: Injeção do bloco de Atenção ---
+        # O bloco atua na resolução mais baixa (4x4) onde os canais são model_channels * 2
+        self.mid_attn = AttentionBlock(model_channels * 2)
+        
         self.mid_res2 = ResnetBlock(model_channels * 2, time_dim)
         
+        # --- SUBIDA (UP) ---
+        # Up 3: 4x4 -> 8x8
+        self.up3_conv = nn.ConvTranspose2d(model_channels * 2, model_channels * 2, 4, stride=2, padding=1)
+        # Input = 2C (up) + 2C (skip connection do down3) = 4C. Output = 2C.
+        self.up3_res = ResnetBlock(model_channels * 4, time_dim, out_dim=model_channels * 2)
+
         # Up 2: 8x8 -> 16x16
-        self.up2_conv = nn.ConvTranspose2d(model_channels * 2, model_channels, 4, stride=2, padding=1) 
-        self.up2_res = ResnetBlock(model_channels * 3, time_dim, out_dim=model_channels)
+        self.up2_conv = nn.ConvTranspose2d(model_channels * 2, model_channels * 2, 4, stride=2, padding=1) 
+        # Input = 2C (up) + 2C (skip connection do down2) = 4C. Output = C. (Reduzimos os canais de volta)
+        self.up2_res = ResnetBlock(model_channels * 4, time_dim, out_dim=model_channels)
         
         # Up 1: 16x16 -> 32x32
         self.up1_conv = nn.ConvTranspose2d(model_channels, model_channels, 4, stride=2, padding=1) 
+        # Input = C (up) + C (skip connection do down1) = 2C. Output = C.
         self.up1_res = ResnetBlock(model_channels * 2, time_dim, out_dim=model_channels)
         
         # Out: Retorna aos 3 canais (RGB)
         self.out_conv = nn.Conv2d(model_channels, in_channels, 3, padding=1)
         
     def forward(self, x, t):
-        # A lógica do forward mantém-se EXATAMENTE igual ao guião!
         t_emb = self.time_embed(t)
         
         h_init = self.init_conv(x) 
         
+        # Down 1
         h1 = self.down1_res(h_init, t_emb) 
         h1_pool = self.down1_pool(h1)      
         
+        # Down 2
         h2 = self.down2_res(h1_pool, t_emb) 
         h2_pool = self.down2_pool(h2)       
         
-        h_mid = self.mid_res1(h2_pool, t_emb) 
+        # Down 3 (Novo)
+        h3 = self.down3_res(h2_pool, t_emb)
+        h3_pool = self.down3_pool(h3)
+        
+        # Middle
+        h_mid = self.mid_res1(h3_pool, t_emb) 
+        
+        # --- NOVO: Passa pelo mecanismo de Atenção ---
+        h_mid = self.mid_attn(h_mid)
+        
         h_mid = self.mid_res2(h_mid, t_emb)   
         
-        h_up2 = self.up2_conv(h_mid) 
-        h_up2 = torch.cat([h_up2, h2], dim=1) 
+        # Up 3 (Novo)
+        h_up3 = self.up3_conv(h_mid) 
+        h_up3 = torch.cat([h_up3, h3], dim=1) # Concatena com h3
+        h_up3 = self.up3_res(h_up3, t_emb)
+        
+        # Up 2
+        h_up2 = self.up2_conv(h_up3) 
+        h_up2 = torch.cat([h_up2, h2], dim=1) # Concatena com h2
         h_up2 = self.up2_res(h_up2, t_emb)   
         
+        # Up 1
         h_up1 = self.up1_conv(h_up2) 
-        h_up1 = torch.cat([h_up1, h1], dim=1) 
+        h_up1 = torch.cat([h_up1, h1], dim=1) # Concatena com h1
         h_up1 = self.up1_res(h_up1, t_emb)   
         
         return self.out_conv(h_up1)
