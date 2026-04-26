@@ -8,12 +8,11 @@ class VAE(nn.Module):
         super().__init__()
         self.latent_dim = latent_dim
 
-        # --- ENCODER MELHORADO ---
         self.encoder = nn.Sequential(
             # 32x32 -> 16x16
             nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(64), # NOVO: Estabiliza o treino
-            nn.LeakyReLU(0.2, inplace=True), # NOVO: Previne "dead neurons"
+            nn.BatchNorm2d(64), # Estabiliza o treino
+            nn.LeakyReLU(0.2, inplace=True), # Previne "dead neurons"
             
             # 16x16 -> 8x8
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),
@@ -38,7 +37,6 @@ class VAE(nn.Module):
         # Entrada do Decoder
         self.decoder_input = nn.Linear(latent_dim, flattened_dim)
         
-        # --- DECODER MELHORADO ---
         self.decoder = nn.Sequential(
             # 4x4 -> 8x8
             nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
@@ -52,7 +50,6 @@ class VAE(nn.Module):
             
             # 16x16 -> 32x32
             nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1),
-            # NOTA IMPORTANTE: Sigmoid assume que as imagens originais estão entre [0, 1]
             nn.Sigmoid(), 
         )
 
@@ -77,7 +74,7 @@ class VAE(nn.Module):
     
     def sample(self, num_samples, device):
         z = torch.randn(num_samples, self.latent_dim).to(device)
-        z = self.decoder_input(z).view(-1, 256, 4, 4) # Alterado para 256
+        z = self.decoder_input(z).view(-1, 256, 4, 4)
         samples = self.decoder(z)
         return samples
     

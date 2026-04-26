@@ -101,7 +101,7 @@ def save_experiment_results(run_dir: Path, model, history: list, config_dict: di
     Guarda o modelo, o gráfico de loss, o histórico em CSV, configs e métricas finais.
     """
     run_dir.mkdir(parents=True, exist_ok=True)
-    print(f"\n💾 A guardar resultados da experiência em:\n -> {run_dir}")
+    print(f"\nA guardar resultados da experiência em:\n -> {run_dir}")
     
     # 1. Guardar Configurações (JSON)
     with open(run_dir / "config.json", "w") as f:
@@ -134,4 +134,4 @@ def save_experiment_results(run_dir: Path, model, history: list, config_dict: di
     plt.savefig(run_dir / "loss_curve.png", dpi=300, bbox_inches='tight')
     plt.close()
     
-    print("✅ Guardado com sucesso!")
+    print("Guardado com sucesso!")
