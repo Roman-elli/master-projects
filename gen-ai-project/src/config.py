@@ -8,7 +8,7 @@ EXPORT_ROOT  = PROJECT_ROOT / "data"
 CSV_PATH_20 = PROJECT_ROOT / "assets" / "training_20_percent.csv"
 
 # Dataset setup
-INDEX_COLUMN = 'train_id_original' #warning if using colab kernel on vscode you need to put the files on your google drive and link this notebook to it.
+INDEX_COLUMN = 'train_id_original'
 TRAIN_FRACTION = 1.0  # Example: 0.5 means half of train split
 ONLY_20 = True
 IMAGE_SIZE = 32
@@ -17,6 +17,9 @@ NUM_WORKERS = 2
 # Hiperparâmetros gerais
 SEED = 42 # 42 -- 123
 BATCH_SIZE = 64
+
+EVALUATE_SAMPLE_N = 1000
+EVALUATE_N_RUNS = 1
 
 # MODEL VARIABLES
 N_EPOCHS = 1
@@ -53,7 +56,7 @@ GAN_RESULT_PATH = GAN_RESULTS_DIR / f"run_beta_{GAN_BETA_TEXT}_Latent{GAN_LATENT
 GAN_PASTA_FID = GAN_RESULT_PATH / "fid_samples"
 
 DIFFUSION_RESULTS_DIR = RESULTS_BASE_DIR / "diffusion"
-DIFFUSION_RESULT_PATH = DIFFUSION_RESULTS_DIR / f"run_beta_X_Latent_X_SEED{SEED}"
+DIFFUSION_RESULT_PATH = DIFFUSION_RESULTS_DIR / f"run_LR_{DIFF_LR}_TIMESTEPS_{DIFF_TIMESTEPS}_DIFF_CHANNELS_{DIFF_CHANNELS}"
 DIFFUSION_PASTA_FID = DIFFUSION_RESULT_PATH / "fid_samples"
 
 CAMINHO_VAE_FID_JSON = VAE_RESULT_PATH / "fid_metrics.json"

@@ -115,7 +115,6 @@ def train_gan(generator, discriminator, loader, latent_dim, epochs=20, lr=2e-4, 
             fake = generator(z)
             
             # 4) Measure how well it recognizes fake images as fake.
-            # Crucial: using .detach() so we don't backprop through the generator here
             d_loss_fake = criterion(discriminator(fake.detach()), fake_targets)
             
             # 5) Combine both real/fake discriminator losses.

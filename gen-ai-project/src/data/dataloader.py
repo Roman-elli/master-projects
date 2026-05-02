@@ -17,7 +17,7 @@ def get_transforms_gan(image_size):
         T.Resize(image_size, interpolation=T.InterpolationMode.BILINEAR),
         T.CenterCrop(image_size),
         T.ToTensor(),  
-        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # <- A Magia do [-1, 1]
+        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
 class HFDatasetTorch(Dataset):

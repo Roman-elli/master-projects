@@ -28,7 +28,7 @@ class ResnetBlock(nn.Module):
     Residual Block with Time Embedding projection.
     Atualizado com GroupNorm(32) e Dropout para maior estabilidade.
     """
-    def __init__(self, dim, time_emb_dim, out_dim=None, dropout=0.1): # <- Adicionámos o parâmetro dropout
+    def __init__(self, dim, time_emb_dim, out_dim=None, dropout=0.1):
         super().__init__()
         self.out_dim = out_dim or dim
         self.mlp = nn.Sequential(
@@ -38,14 +38,12 @@ class ResnetBlock(nn.Module):
         self.conv1 = nn.Conv2d(dim, self.out_dim, 3, padding=1)
         self.conv2 = nn.Conv2d(self.out_dim, self.out_dim, 3, padding=1)
         
-        # --- ALTERAÇÃO 1: 32 Grupos em vez de 4 ---
-        # Na literatura de Difusão, 32 grupos provou ser o "sweet spot"
         self.norm1 = nn.GroupNorm(32, dim)
         self.norm2 = nn.GroupNorm(32, self.out_dim)
         
         self.act = nn.SiLU()
         
-        # --- ALTERAÇÃO 2: Camada de Dropout ---
+        # Camada de Dropout
         self.dropout = nn.Dropout(dropout)
         
         # Shortcut for residual if dims don't match
@@ -56,20 +54,17 @@ class ResnetBlock(nn.Module):
         h = self.act(h)
         h = self.conv1(h)
         
-        # Add time embedding
         time_emb = self.mlp(time_emb)
         h = h + time_emb[:, :, None, None]
         
         h = self.norm2(h)
         h = self.act(h)
         
-        # --- ALTERAÇÃO 2: Aplicar o dropout antes da conv2 ---
         h = self.dropout(h)
         
         h = self.conv2(h)
         return self.shortcut(x) + h
    
-# --- NOVO: Bloco de Atenção introduzido do zero ---
 class AttentionBlock(nn.Module):
     def __init__(self, dim):
         super().__init__()
@@ -100,11 +95,10 @@ class AttentionBlock(nn.Module):
         return x + out # Conexão residual
     
 class PixelUNet(nn.Module):
-    # ALTERAÇÃO: in_channels=3 (RGB), model_channels default passa para 128 para maior capacidade
     def __init__(self, in_channels=3, model_channels=128): 
         super().__init__()
         
-        # Time Embedding (mantém-se igual)
+        # Time Embedding
         self.time_embed = nn.Sequential(
             SinusoidalPosEmb(model_channels),
             nn.Linear(model_channels, model_channels * 4),
@@ -131,8 +125,8 @@ class PixelUNet(nn.Module):
         
         # --- MEIO (MIDDLE - 4x4) ---
         self.mid_res1 = ResnetBlock(model_channels * 2, time_dim)
-        # Nota: É aqui no meio que vamos injetar a Atenção na Fase 3!
-        # --- NOVO: Injeção do bloco de Atenção ---
+        
+        # --- Injeção do bloco de Atenção ---
         # O bloco atua na resolução mais baixa (4x4) onde os canais são model_channels * 2
         self.mid_attn = AttentionBlock(model_channels * 2)
         
@@ -177,7 +171,7 @@ class PixelUNet(nn.Module):
         # Middle
         h_mid = self.mid_res1(h3_pool, t_emb) 
         
-        # --- NOVO: Passa pelo mecanismo de Atenção ---
+        # Passa pelo mecanismo de Atenção
         h_mid = self.mid_attn(h_mid)
         
         h_mid = self.mid_res2(h_mid, t_emb)   
@@ -320,7 +314,6 @@ class GaussianDiffusion:
         """
         model.eval()
         
-        # Se enviarmos o Slerp de fora, usamos
         if initial_noise is not None:
             x = initial_noise.to(self.device)
         else:
@@ -336,85 +329,3 @@ class GaussianDiffusion:
         """Get value at index t and expand to match x_shape."""
         out = tensor.gather(-1, t)
         return out.view(t.shape[0], *((1,) * (len(x_shape) - 1)))
-
-# Versao stor
-
-# --- PIXEL UNET ---
-
-# class PixelUNet(nn.Module):
-#     """
-#     Standard UNet for Diffusion on image space.
-#     Fits 28x28 MNIST images.
-#     """
-#     def __init__(self, in_channels=1, model_channels=64):
-#         super().__init__()
-#         # Time Embedding
-#         self.time_embed = nn.Sequential(
-#             SinusoidalPosEmb(model_channels),
-#             nn.Linear(model_channels, model_channels * 4),
-#             nn.SiLU(),
-#             nn.Linear(model_channels * 4, model_channels * 4),
-#         )
-        
-#         time_dim = model_channels * 4
-        
-#         # Initial Conv
-#         self.init_conv = nn.Conv2d(in_channels, model_channels, 3, padding=1)
-        
-#         # Down 1: 28 -> 14
-#         self.down1_res = ResnetBlock(model_channels, time_dim)
-#         self.down1_pool = nn.Conv2d(model_channels, model_channels, 3, stride=2, padding=1)
-        
-#         # Down 2: 14 -> 7
-#         self.down2_res = ResnetBlock(model_channels, time_dim, out_dim=model_channels * 2)
-#         self.down2_pool = nn.Conv2d(model_channels * 2, model_channels * 2, 3, stride=2, padding=1)
-        
-#         # Middle
-#         self.mid_res1 = ResnetBlock(model_channels * 2, time_dim)
-#         self.mid_res2 = ResnetBlock(model_channels * 2, time_dim)
-        
-#         # Up 2: 7 -> 14
-#         self.up2_conv = nn.ConvTranspose2d(model_channels * 2, model_channels, 4, stride=2, padding=1) # 7 -> 14
-#         # Skip connection from down2_res is model_channels * 2
-#         # After concat: model_channels (up) + model_channels*2 (skip) = model_channels * 3
-#         self.up2_res = ResnetBlock(model_channels * 3, time_dim, out_dim=model_channels)
-        
-#         # Up 1: 14 -> 28
-#         self.up1_conv = nn.ConvTranspose2d(model_channels, model_channels, 4, stride=2, padding=1) # 14 -> 28
-#         # Skip connection from down1_res is model_channels
-#         # After concat: model_channels (up) + model_channels (skip) = model_channels * 2
-#         self.up1_res = ResnetBlock(model_channels * 2, time_dim, out_dim=model_channels)
-        
-#         # Out
-#         self.out_conv = nn.Conv2d(model_channels, in_channels, 3, padding=1)
-        
-#     def forward(self, x, t):
-#         t_emb = self.time_embed(t)
-        
-#         # Initial
-#         h_init = self.init_conv(x) # [B, C, 28, 28]
-        
-#         # Down 1
-#         h1 = self.down1_res(h_init, t_emb) # [B, C, 28, 28]
-#         h1_pool = self.down1_pool(h1)      # [B, C, 14, 14]
-        
-#         # Down 2
-#         h2 = self.down2_res(h1_pool, t_emb) # [B, 2C, 14, 14]
-#         h2_pool = self.down2_pool(h2)       # [B, 2C, 7, 7]
-        
-#         # Middle
-#         h_mid = self.mid_res1(h2_pool, t_emb) # [B, 2C, 7, 7]
-#         h_mid = self.mid_res2(h_mid, t_emb)   # [B, 2C, 7, 7]
-        
-#         # Up 2
-#         h_up2 = self.up2_conv(h_mid) # [B, C, 14, 14]
-#         h_up2 = torch.cat([h_up2, h2], dim=1) # [B, 3C, 14, 14]
-#         h_up2 = self.up2_res(h_up2, t_emb)   # [B, C, 14, 14]
-        
-#         # Up 1
-#         h_up1 = self.up1_conv(h_up2) # [B, C, 28, 28]
-#         h_up1 = torch.cat([h_up1, h1], dim=1) # [B, 2C, 28, 28]
-#         h_up1 = self.up1_res(h_up1, t_emb)   # [B, C, 28, 28]
-        
-#         # Out
-#         return self.out_conv(h_up1)
