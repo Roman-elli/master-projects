@@ -10,8 +10,7 @@ def get_stock_data(tickers):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         # Descarregar os dados
-        data = yf.download(tickers, start="2020-01-01", end="2026-01-01")['Close']
-    
+    data = yf.download(tickers, start="2016-01-01", end="2026-04-20")['Close']    
     print(f"-> Dados descarregados: {data.shape[0]} dias, {data.shape[1]} ações.")
     
     # 1. Definir o limite mínimo de dados válidos que uma ação deve ter (ex: 95% dos dias)
