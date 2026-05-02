@@ -1,0 +1,30 @@
+/* assets/style.css */
+
+.sidebar-personalizada {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 18rem;
+    padding: 2rem 1rem;
+    background-color: #202a35;
+    color: white;
+}
+
+.conteudo-principal {
+    margin-left: 19rem;
+    padding: 2rem;
+    background-color: #f0f2f5;
+    min-height: 100vh;
+}
+
+/* Você também pode criar classes para os seus cards */
+.meu-card-kpi {
+    border-radius: 10px;
+    border: none;
+    transition: transform 0.2s; /* Efeito hover opcional */
+}
+
+.meu-card-kpi:hover {
+    transform: translateY(-5px);
+}
