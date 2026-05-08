@@ -1,5 +1,31 @@
 # Variables, paths, parameters... definition
 
+# Parâmetros leitura de stock
+DOWNLOAD_STOCKS = True
+
+START_DATE = "2016-01-01" 
+END_DATE="2026-05-01"
+
+SPLIT_DATE = '2024-2-28'
+
+HALF_LIFE_TIME_LIMIT = 3
+
+# Parâmetros validação de pares
+P_VALUE_ADF = 0.05
+HURST_VALUE = 0.4
+
+# Parâmetros Estruturais
+WINDOW = 60
+LOWER_PERCENTILE, UPPER_PERCENTILE = 0.03, 0.97
+SL_MULTIPLIER = 1.5
+LIMIAR_FINAL = 0.6
+
+# Parâmetros backtesting
+CAPITAL_INICIAL = 100000
+ALAVANCAGEM_FUNDO = 3  # Alavancagem de 3x para compensar Drawdown Baixo
+MAX_ALLOCATION = 0.2
+
+# Variável Stock
 TICKERS = ["NVDA", "AAPL", "GOOG", "GOOGL", "MSFT", "AMZN", "META", "AVGO", "TSLA",
     "WMT", "LLY", "JPM", "XOM", "V", "JNJ", "MA", "MU", "COST", "ORCL",
     "NFLX", "ABBV", "CVX", "PG", "PLTR", "HD", "BAC", "GE", "KO", "CAT",

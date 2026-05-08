@@ -1,41 +1,62 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.neighbors import NearestNeighbors
-from sklearn.cluster import DBSCAN
+from statsmodels.tsa.stattools import adfuller
 
-########
-# PCA #
-#######
+from utils.metrics import get_tls_beta, calculate_hurst
+import config as cfg
 
-def calculate_PCA(X_scaled):
-    # PCA
-    pca = PCA()
-    pca.fit(X_scaled)
+import hdbscan
 
-    # Cumulative Variance Explained
-    explained_variance = np.cumsum(pca.explained_variance_ratio_)
+def RMT_clustering_hdbscan(X_pca, returns):
+    """
+    Utiliza HDBSCAN para lidar com densidades variáveis.
+    """
+    # 1. Executar o HDBSCAN (Não requer EPS)
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=2, min_samples=1, gen_min_span_tree=True)
+    labels = clusterer.fit_predict(X_pca)
 
-    # Determine the number of components for 95% of the variance explained
-    n_components = np.argmax(explained_variance >= 0.8) + 1
-    print(f"Principal components: {n_components}")
+    # 2. Agrupar os Tickers pelos Clusters
+    clusters = {}
+    tickers = returns.columns
 
-    plt.figure(figsize=(8,5))
-    plt.plot(range(1, len(explained_variance) + 1), explained_variance, marker='o', linestyle='--')
-    plt.axhline(y=0.95, color='r', linestyle='--', label='95% of Variance')
-    plt.xlabel('Components number')
-    plt.ylabel('Cumulative Variance Explained')
-    plt.title('PCA')
-    plt.legend()
+    for ticker, cluster_id in zip(tickers, labels):
+        if cluster_id == -1:  # Ignorar o ruído
+            continue
+        if cluster_id not in clusters:
+            clusters[cluster_id] = []
+        clusters[cluster_id].append(ticker)
+
+    # 3. Filtrar apenas os clusters válidos (Pares ou Baskets)
+    pairs = [group for group in clusters.values() if len(group) > 1]
+
+    # 4. Mostrar os Resultados
+    num_clusters = len(pairs)
+    num_ruido = list(labels).count(-1)
+
+    print(f"Resumo do HDBSCAN:")
+    print(f"-> {num_clusters} clusters estruturais encontrados.")
+    print(f"-> {num_ruido} ações rejeitadas como ruído.\n")
+
+    # Plot results
+    plt.figure(figsize=(12, 8))
+    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels, cmap='tab20', alpha=0.8, s=50)
+    
+    for i, ticker in enumerate(tickers):
+        if labels[i] != -1:
+            plt.text(X_pca[i, 0] + 0.02, X_pca[i, 1] + 0.02, ticker, fontsize=8, alpha=0.7)
+
+    plt.title("Visualização dos Clusters (HDBSCAN)", fontsize=14)
+    plt.xlabel("Componente Principal 1", fontsize=12)
+    plt.ylabel("Componente Principal 2", fontsize=12)
+    plt.colorbar(scatter, label='ID do Cluster (-1 é Ruído)')
+    plt.grid(True, linestyle='--', alpha=0.3)
     plt.show()
 
-    return X_scaled
-
-########
-# RMT #
-#######
+    return pairs, clusters
 
 def calculate_RMT(data):
     # 1. Definir as dimensões dos dados
@@ -64,7 +85,7 @@ def calculate_RMT(data):
 
     # 6. Aplicar o teu PCA original, mas agora com o número exato do SOTA
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(data.T) # Mantendo a tua lógica para ações como amostras
+    X_scaled = scaler.fit_transform(data.T)
 
     pca = PCA(n_components=n_components)
     X_pca = pca.fit_transform(X_scaled)
@@ -82,73 +103,33 @@ def calculate_RMT(data):
 
     return X_pca
 
-def calculate_nearest_neighbors(X_pca):
-    # 1. Medimos a distância de cada ação à sua vizinha mais próxima (k=2)
-    neighbors = NearestNeighbors(n_neighbors=2)
-    neighbors_fit = neighbors.fit(X_pca)
-    distances, _ = neighbors_fit.kneighbors(X_pca)
+def validate_pairs(candidate_pairs, prices_formation, prices_full):
+    """Filtra pares cointegrados e elásticos usando TLS, ADF e Hurst."""
+    log_prices_form = np.log(prices_formation)
+    log_prices_full = np.log(prices_full)
+    valid_pairs, spreads_dict = [], {}
 
-    # 2. Ordenamos as distâncias para formar a curva
-    distances = np.sort(distances[:, 1], axis=0)
+    for p in candidate_pairs:
+        # Gerar spread a partir do TLS (Total least square)
+        s1, s2 = p[0], p[1]
+        y_form, x_form = log_prices_form[s1].values, log_prices_form[s2].values
+        
+        beta = get_tls_beta(x_form, y_form)
+        spread_form = y_form - beta * x_form
+        
+        # Teste ADF (Cointegração)
+        p_value = adfuller(spread_form)[1]
+        
+        if p_value < cfg.P_VALUE_ADF:
+            hurst_exp = calculate_hurst(spread_form)
+            # Filtro Hurst (Reversão Rápida)
+            if hurst_exp < cfg.HURST_VALUE:
+                valid_pairs.append({
+                    'ativo_y': s1, 'ativo_x': s2, 'beta_tls': beta, 
+                    'adf_p_value': p_value, 'hurst': hurst_exp
+                })
+                # Spread total para uso futuro
+                spreads_dict[f"{s1}_{s2}"] = log_prices_full[s1] - beta * log_prices_full[s2]
 
-    # 3. Plot do Gráfico K-Distance
-    plt.figure(figsize=(10, 5))
-    plt.plot(distances, linewidth=2)
-    plt.title('Gráfico K-Distance: Procura a subida acentuada (Cotovelo)')
-    plt.xlabel('Ações (ordenadas por distância ao par mais próximo)')
-    plt.ylabel('Distância (Potencial valor de EPS)')
-    plt.grid(True, linestyle='--', alpha=0.7)
-    plt.show()
-
-def RMT_clustering(best_eps, X_pca, returns):
-    # 1. Executar o DBSCAN
-    dbscan = DBSCAN(eps=best_eps, min_samples=2)
-    labels = dbscan.fit_predict(X_pca)
-
-    # 2. Agrupar os Tickers pelos Clusters
-    clusters = {}
-    tickers = returns.columns
-
-    for ticker, cluster_id in zip(tickers, labels):
-        if cluster_id == -1:  # Ignorar o ruído (ações sem par)
-            continue
-        if cluster_id not in clusters:
-            clusters[cluster_id] = []
-        clusters[cluster_id].append(ticker)
-
-    # 3. Filtrar apenas os clusters válidos (Pares ou Baskets)
-    pairs = [group for group in clusters.values() if len(group) > 1]
-
-    # 4. Mostrar os Resultados
-    num_clusters = len(pairs)
-    num_ruido = list(labels).count(-1)
-
-    print(f"Resumo do DBSCAN (eps={best_eps}):")
-    print(f"-> {num_clusters} clusters estruturais encontrados.")
-    print(f"-> {num_ruido} ações rejeitadas como ruído.\n")
-
-    print("Possíveis Pares/Baskets encontrados:")
-    for i, pair in enumerate(pairs):
-        print(f"Cluster {i}: {pair}")
-
-    # Plot results
-    # 1. Configurar o Scatter Plot
-    plt.figure(figsize=(12, 8))
-
-    # Usamos um colormap com cores distintas para os clusters e cinzento para o ruído
-    scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels, cmap='tab20', alpha=0.8, s=50)
-
-    # 2. Anotações
-    for i, ticker in enumerate(tickers):
-        if labels[i] != -1:
-            plt.text(X_pca[i, 0] + 0.02, X_pca[i, 1] + 0.02, ticker, fontsize=8, alpha=0.7)
-
-    # 3. Estética do Gráfico
-    plt.title(f"Visualização 2D dos Clusters (DBSCAN eps={best_eps})", fontsize=14)
-    plt.xlabel("Componente Principal 1", fontsize=12)
-    plt.ylabel("Componente Principal 2", fontsize=12)
-    plt.colorbar(scatter, label='ID do Cluster (-1 é Ruído)')
-    plt.grid(True, linestyle='--', alpha=0.3)
-    plt.show()
-
-    return pairs, clusters
+    valid_pairs_df = pd.DataFrame(valid_pairs).sort_values(by=['hurst', 'adf_p_value'])
+    return valid_pairs_df, spreads_dict
