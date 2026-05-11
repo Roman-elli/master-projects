@@ -1,29 +1,40 @@
 # Variables, paths, parameters... definition
 
-# Parâmetros leitura de stock
-DOWNLOAD_STOCKS = True
+# config.py
+DOWNLOAD_STOCKS = False
+TRAIN_MODELS = False
 
-START_DATE = "2016-01-01" 
-END_DATE="2026-05-01"
+# Definição Explícita de Treino e Teste
+TRAIN_START = "2010-01-01" 
+TRAIN_END = "2015-12-31"
 
-SPLIT_DATE = '2024-2-28'
+TEST_START = "2021-01-01"
+TEST_END = "2024-05-01"
 
 HALF_LIFE_TIME_LIMIT = 3
-
-# Parâmetros validação de pares
 P_VALUE_ADF = 0.05
 HURST_VALUE = 0.4
-
-# Parâmetros Estruturais
 WINDOW = 60
 LOWER_PERCENTILE, UPPER_PERCENTILE = 0.03, 0.97
 SL_MULTIPLIER = 1.5
 LIMIAR_FINAL = 0.6
-
-# Parâmetros backtesting
 CAPITAL_INICIAL = 100000
-ALAVANCAGEM_FUNDO = 3  # Alavancagem de 3x para compensar Drawdown Baixo
+ALAVANCAGEM_FUNDO = 3  
 MAX_ALLOCATION = 0.2
+
+# TICKERS = [...] (Mantém a tua lista)
+
+# --- CONFIGURAÇÃO DE TEMPO E RESOLUÇÃO ---
+# RESOLUTION = '1h'  # Opções suportadas: '1d' (Diário) ou '1h' (Horário)
+# DATABENTO_API_KEY = "db-S5phJAyA5xR3UHsXuaWuDVVgh6PSR"
+
+# # Assumimos 7 barras de 1 hora por cada dia de pregão (ex: 09:30 às 16:00)
+# BARS_PER_DAY = 7 if RESOLUTION == '1h' else 1
+
+# # Parâmetros Dinâmicos (Multiplicam automaticamente consoante a resolução)
+# WINDOW = 60 * BARS_PER_DAY            # Memória do elástico (60 dias vs 420 horas)
+# MAX_HALF_LIFE = 12 * BARS_PER_DAY     # Filtro Anti-Zombi (12 dias vs 84 horas)
+# MIN_HOLD_TIME = 5 * BARS_PER_DAY      # Tempo mínimo de aposta (5 dias vs 35 horas)
 
 # Variável Stock
 TICKERS = ["NVDA", "AAPL", "GOOG", "GOOGL", "MSFT", "AMZN", "META", "AVGO", "TSLA",

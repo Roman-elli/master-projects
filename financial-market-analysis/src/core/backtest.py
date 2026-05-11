@@ -2,20 +2,23 @@ import pandas as pd
 import numpy as np
 from scipy.stats import percentileofscore
 from tqdm import tqdm
+import random
 from utils.metrics import estimate_ou_parameters
 import config as cfg
 
-def run_oos_backtest(valid_pairs_df, spreads_dict, meta_agent, split_date, 
+def run_oos_backtest(valid_pairs_df, spreads_dict, models_dict, mode, test_start, test_end, 
                      window, lower_pct, upper_pct, sl_mult, limiar_final, alavancagem_fundo):
     """
     Simula o passar do tempo num ambiente Out-of-Sample (OOS).
-    Para cada dia, calcula a ECDF, valida as regras de entrada (Portões 1 e 2) 
-    e gere as posições ativas usando o Método da Tripla Barreira.
+    Modos de Inteligência suportados:
+    - 'global': Usa um modelo único treinado com todos os dados.
+    - 'specific': Cada par usa o seu modelo exclusivo.
+    - 'cross_testing': Cada par é operado por um modelo treinado num par DIFERENTE (Transfer Learning).
     """
     trade_log = []
 
     # Iterar sobre todos os pares válidos
-    for _, row in tqdm(valid_pairs_df.iterrows(), total=len(valid_pairs_df), desc="OOS Backtest"):
+    for _, row in tqdm(valid_pairs_df.iterrows(), total=len(valid_pairs_df), desc=f"OOS Backtest ({mode.upper()})"):
         s1, s2 = row['ativo_y'], row['ativo_x']
         pair_name = f"{s1}_{s2}"
         
@@ -36,14 +39,46 @@ def run_oos_backtest(valid_pairs_df, spreads_dict, meta_agent, split_date,
             df_test.iloc[i, df_test.columns.get_loc('mu')] = mu
             df_test.iloc[i, df_test.columns.get_loc('half_life')] = hl
             
-        # Isolar SÓ o período de Trading (O Out-of-Sample), ignorando a formação
-        df_test = df_test.loc[split_date:].dropna()
+        # Isolar SÓ o período de Teste
+        df_test = df_test.loc[test_start:test_end].dropna()
         if df_test.empty: continue
+            
+        # 2. SELEÇÃO DO CÉREBRO (Agente) PARA ESTE PAR
+        agent_name = "Global" # Nome default para logs
+        
+        if mode == 'global':
+            agent = models_dict['global']
+            
+        elif mode == 'specific':
+            if pair_name in models_dict:
+                agent = models_dict[pair_name]
+                agent_name = pair_name
+            else:
+                continue # Ignorar se não tem modelo próprio
+                
+        elif mode == 'cross_testing':
+            # 1. Criar uma lista estática de todos os modelos específicos disponíveis
+            chaves_modelos = [k for k in models_dict.keys() if k != 'global']
+            
+            if pair_name not in chaves_modelos or len(chaves_modelos) < 2:
+                continue
+                
+            # 2. Descobrir em que posição da "roda" este par está
+            meu_index = chaves_modelos.index(pair_name)
+            
+            # 3. Passar o cérebro para a "direita" (Shift + 1). 
+            # O último da lista usa o cérebro do primeiro (usando o resto da divisão %)
+            index_vizinho = (meu_index + 1) % len(chaves_modelos)
+            
+            modelo_vizinho = chaves_modelos[index_vizinho]
+            
+            agent = models_dict[modelo_vizinho]
+            agent_name = modelo_vizinho # Registar quem foi o intruso
             
         pos = 0 # 0 = Sem posição aberta
         entry_data = {}
         
-        # 2. Simulação Temporal
+        # 3. Simulação Temporal
         for idx, r in df_test.iterrows():
             p = r['ecdf']
             
@@ -61,13 +96,14 @@ def run_oos_backtest(valid_pairs_df, spreads_dict, meta_agent, split_date,
                     ret = (current_price - entry_data['price']) * pos
                     motivo = "Take-Profit" if hit_tp else ("Stop-Loss" if hit_sl else "Time-Stop")
                     
-                    # Registar trade finalizado
+                    # Registar trade finalizado (adicionada a coluna 'agent_used' para saberes quem operou no Cross-Test)
                     trade_log.append({
-                        'pair': pair_name, 'entry_date': entry_data['date'], 'exit_date': idx,
+                        'pair': pair_name, 'agent_used': agent_name, 
+                        'entry_date': entry_data['date'], 'exit_date': idx,
                         'side': pos, 'prob_ml': entry_data['prob'], 'kelly_fraction': entry_data['kelly'],
                         'duration': days_held, 'exit_reason': motivo, 'pnl_spread_pts': ret
                     })
-                    pos = 0 # Posição encerrada, bot livre novamente
+                    pos = 0 # Posição encerrada
                     continue
                     
             # --- LÓGICA DE ENTRADA (Portões Hierárquicos) ---
@@ -76,29 +112,27 @@ def run_oos_backtest(valid_pairs_df, spreads_dict, meta_agent, split_date,
                 if p <= lower_pct: side_signal = 1
                 elif p >= upper_pct: side_signal = -1
 
-                # Portão 1 Extra: Filtro "Anti-Zombi". Abortar se demorar mais de 12 dias a reverter.
+                # Portão 1 Extra: Filtro "Anti-Zombi"
                 if side_signal != 0 and r['half_life'] > 12:
                     side_signal = 0
                 
                 if side_signal != 0:
-                    # Preparar os dados exatos para o Random Forest prever
                     X_atual = pd.DataFrame([{
                         'ecdf': r['ecdf'], 'theta': r['theta'], 'half_life': r['half_life'], 
                         'volatility': r['volatility'], 'side': side_signal
                     }])
                     
-                    # Portão 2: O Meta-Agente aprova?
-                    prob_sucesso = meta_agent.predict_proba(X_atual)[0][1]
+                    # Portão 2: O Agente aprova? (Pode ser Global, Específico ou Estrangeiro)
+                    prob_sucesso = agent.predict_proba(X_atual)[0][1]
                     
                     if prob_sucesso >= limiar_final:
                         pos = side_signal
                         
-                        # Kelly Dinâmico com Alavancagem e limites de segurança
+                        # Kelly Dinâmico com Alavancagem
                         kelly_f = prob_sucesso - (1 - prob_sucesso)
                         kelly_f_alavancado = kelly_f * alavancagem_fundo
                         kelly_f_final = max(0.01, min(kelly_f_alavancado, cfg.MAX_ALLOCATION))
                         
-                        # Construir Barreiras Muro (Take Profit = Média, Stop Loss = Volatilidade extrema)
                         tp_price = r['mu']
                         sl_price = r['spread'] - (r['volatility'] * sl_mult) if pos == 1 else r['spread'] + (r['volatility'] * sl_mult)
                         
