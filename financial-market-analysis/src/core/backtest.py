@@ -122,7 +122,6 @@ def run_oos_backtest(valid_pairs_df, spreads_dict, models_dict, mode, test_start
                         'volatility': r['volatility'], 'side': side_signal
                     }])
                     
-                    # Portão 2: O Agente aprova? (Pode ser Global, Específico ou Estrangeiro)
                     prob_sucesso = agent.predict_proba(X_atual)[0][1]
                     
                     if prob_sucesso >= limiar_final:

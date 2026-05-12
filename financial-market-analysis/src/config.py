@@ -1,15 +1,15 @@
 # Variables, paths, parameters... definition
 
 # config.py
-DOWNLOAD_STOCKS = False
-TRAIN_MODELS = False
+DOWNLOAD_STOCKS = True
+TRAIN_MODELS = True
 
 # Definição Explícita de Treino e Teste
 TRAIN_START = "2010-01-01" 
 TRAIN_END = "2015-12-31"
 
-TEST_START = "2021-01-01"
-TEST_END = "2024-05-01"
+TEST_START = "2016-01-01"
+TEST_END = "2025-12-31"
 
 HALF_LIFE_TIME_LIMIT = 3
 P_VALUE_ADF = 0.05
@@ -22,11 +22,9 @@ CAPITAL_INICIAL = 100000
 ALAVANCAGEM_FUNDO = 3  
 MAX_ALLOCATION = 0.2
 
-# TICKERS = [...] (Mantém a tua lista)
-
 # --- CONFIGURAÇÃO DE TEMPO E RESOLUÇÃO ---
 # RESOLUTION = '1h'  # Opções suportadas: '1d' (Diário) ou '1h' (Horário)
-# DATABENTO_API_KEY = "db-S5phJAyA5xR3UHsXuaWuDVVgh6PSR"
+# DATABENTO_API_KEY =
 
 # # Assumimos 7 barras de 1 hora por cada dia de pregão (ex: 09:30 às 16:00)
 # BARS_PER_DAY = 7 if RESOLUTION == '1h' else 1
