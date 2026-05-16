@@ -1,6 +1,6 @@
 # Path variables
-RAW_COURSES_PATH = 'assets/raw_courses_data.csv'
-RAW_INSTITUTION_PATH = 'assets/raw_institution_data.csv'
+RAW_COURSES_PATH = 'raw_data/raw_courses_data.csv'
+RAW_INSTITUTION_PATH = 'raw_data/raw_institution_data.csv'
 CLEAN_DATA_PATH = 'data/clean_data.csv'
 MERGED_DATA_PATH = 'data/merged_data.csv'
 
