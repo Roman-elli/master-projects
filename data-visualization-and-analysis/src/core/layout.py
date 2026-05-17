@@ -72,8 +72,7 @@ def serve_layout(df_final):
             options=[
                 {'label': 'All Levels', 'value': 'TODOS'},
                 {'label': 'Undergraduate Certificate/Assoc.', 'value': '2'},
-                {'label': 'Bachelor’s Degree', 'value': '3'},
-                {'label': 'Post-baccalaureate Cert.', 'value': 4}
+                {'label': 'Bachelor’s Degree', 'value': '3'}
             ],
             value='TODOS',
             clearable=False,
