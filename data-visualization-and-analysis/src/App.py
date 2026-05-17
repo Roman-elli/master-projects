@@ -31,7 +31,7 @@ app.layout = serve_layout(df_final)
      Output('kpi-alunos-container', 'children'),
      Output('kpi-divida-container', 'children'),
      Output('kpi-salario-container', 'children'),
-     Output('kpi-default-container', 'children'), # NOVO KPI AQUI
+     Output('kpi-default-container', 'children'),
      Output('graph-mapa', 'figure'),
      Output('graph-donut', 'figure'),
      Output('graph-scatter', 'figure'),

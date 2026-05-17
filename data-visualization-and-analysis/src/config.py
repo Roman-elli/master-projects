@@ -54,7 +54,7 @@ colunas_para_converter = [
     'IPEDSCOUNT1',
     'BBRR2_FED_COMP_DFLT',
     'DEBT_MALE_STGP_ANY_MDN', 'DEBT_NOTMALE_STGP_ANY_MDN',
-    'DEBT_PELL_STGP_ANY_MDN', 'DEBT_NOPELL_STGP_ANY_MDN'
+    'DEBT_PELL_STGP_ANY_MDN', 'DEBT_NOPELL_STGP_ANY_MDN',
 ]
 
 colunas_genero = [
@@ -71,7 +71,7 @@ colunas_pell = [
         'EARN_PELL_WNE_MDN_5YR', 'EARN_NOPELL_WNE_MDN_5YR'
     ]
 
-important_institution_cols = ['UNITID', 'LATITUDE', 'LONGITUDE', 'STABBR', 'CITY', 'CONTROL', 'ADM_RATE_ALL']
+important_institution_cols = ['UNITID', 'LATITUDE', 'LONGITUDE', 'STABBR', 'CITY', 'CONTROL', 'ADM_RATE_ALL', 'UGDS_MEN', 'UGDS_WOMEN']
 
 # Layout variables
 # =========================================================
