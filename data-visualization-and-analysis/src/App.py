@@ -1,13 +1,13 @@
-import os
 import dash
-from dash import html, dcc, Input, Output, ctx
+from dash import Input, Output, ctx
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
+import src.config as cfg
 
 from src.core.engine import calcular_kpis, carregar_e_limpar_dados 
 from src.core.components import criar_kpi_card, criar_seccao_resumo 
-from src.core.layout import serve_layout, MAPA_ESTADOS
+from src.core.layout import serve_layout
 
 # Dicionários de formatação e cores
 TRADUCAO_SETORES = {'Pública': 'Public', 'Privada (s/ fins)': 'Private (Non-Profit)', 'Privada (c/ fins)': 'Private (For-Profit)'}
@@ -31,6 +31,7 @@ app.layout = serve_layout(df_final)
      Output('kpi-alunos-container', 'children'),
      Output('kpi-divida-container', 'children'),
      Output('kpi-salario-container', 'children'),
+     Output('kpi-default-container', 'children'), # NOVO KPI AQUI
      Output('graph-mapa', 'figure'),
      Output('graph-donut', 'figure'),
      Output('graph-scatter', 'figure'),
@@ -46,9 +47,11 @@ app.layout = serve_layout(df_final)
      Input('graph-donut', 'clickData'),
      Input('graph-scatter', 'clickData'),
      Input('graph-box', 'clickData'),
-     Input('reset-btn', 'n_clicks')]
+     Input('reset-btn', 'n_clicks'),
+     Input('toggle-pell', 'value'),
+     Input('toggle-gender', 'value')]
 )
-def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, click_donut, click_scatter, click_box, n_reset):
+def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, click_donut, click_scatter, click_box, n_reset, toggle_pell, toggle_gender):
     # Identificar qual foi a ação do utilizador que disparou o callback
     trigger_id = ctx.triggered_id
     trigger_prop = ctx.triggered[0]['prop_id'] if ctx.triggered else ''
@@ -78,7 +81,7 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
     # Se a seleção não tiver dados, devolver gráficos vazios
     if dff_base.empty:
         fig_vazia = px.scatter(title="No data found for this selection")
-        return [dash.no_update]*4 + [fig_vazia]*6
+        return [dash.no_update]*5 + [fig_vazia]*6
     
     # --- B. LÓGICA DE CROSS-FILTERING (Seleção ao Clicar) ---
     dff_detalhe = dff_base.copy()
@@ -96,7 +99,13 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
             setor_clicado = click_donut['points'][0]['label']
             selecionados = dff_base[dff_base['Tipo_Instituicao'] == setor_clicado]['INSTNM'].tolist()
         elif trigger_id == 'graph-scatter' and click_scatter:
-            selecionados = [click_scatter['points'][0]['hovertext']]
+            nome_inst_clicada = click_scatter['points'][0]['hovertext']
+            selecionados = [nome_inst_clicada]
+            inst_dados = dff_base[dff_base['INSTNM'] == nome_inst_clicada]
+            if not inst_dados.empty:
+                lat_foco = inst_dados['LATITUDE'].iloc[0]
+                lon_foco = inst_dados['LONGITUDE'].iloc[0]
+                zoom_foco = 10
         elif trigger_id == 'graph-box' and click_box:
             setor_clicado = click_box['points'][0]['x']
             selecionados = dff_base[dff_base['Tipo_Instituicao'] == setor_clicado]['INSTNM'].tolist()
@@ -107,7 +116,7 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
 
     # --- C. DADOS ATIVOS PARA KPIS E GRÁFICOS ESTATÍSTICOS ---
     dff_kpis = dff_detalhe[dff_detalhe['is_selected'] == True]
-    k_al, k_div, k_sal = calcular_kpis(dff_kpis)
+    k_al, k_div, k_sal, k_def = calcular_kpis(dff_kpis)
 
     # --- D. GERAÇÃO DO RESUMO ---
     if dff_kpis.empty:
@@ -116,16 +125,11 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
         total_inst = len(dff_kpis)
         
         # Parágrafo 1: Mapa / Foco Institucional
-        # Conta quantas instituições ÚNICAS existem na seleção
         num_unicas = dff_kpis['INSTNM'].nunique()
-        
-        # 1. Obter as siglas dos estados na seleção atual e traduzir para os nomes completos
         estados_siglas = dff_kpis['STABBR'].dropna().unique()
-        estados_nomes = sorted([MAPA_ESTADOS.get(sigla, sigla) for sigla in estados_siglas])
+        estados_nomes = sorted([cfg.MAPA_ESTADOS.get(sigla, sigla) for sigla in estados_siglas])
         
-        # 2. Formatar o texto com a lista de estados (ex: "California, Texas and Florida")
         if len(estados_nomes) > 1:
-            # Proteção: se forem muitos estados (ex: > 10), evitamos uma lista gigante
             if len(estados_nomes) > 10:
                 estados_texto = "across the country"
             else:
@@ -135,7 +139,6 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
         else:
             estados_texto = "unknown locations"
 
-        # 3. Construção do Parágrafo 1
         if num_unicas == 1:
             nome_instituicao = dff_kpis['INSTNM'].iloc[0]
             if area != 'TODOS':
@@ -150,11 +153,11 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
                 p1_mapa = f"🌍 **Geographic Distribution:** Analyzing the selected sample in **{area}**, distributed across {len(estados_nomes)} states (**{estados_texto}**)."
                 
         elif area != 'TODOS' and estado != 'TODOS':
-            nome_estado_filtro = MAPA_ESTADOS.get(estado, estado)
+            nome_estado_filtro = cfg.MAPA_ESTADOS.get(estado, estado)
             p1_mapa = f"🌍 **Geographic Distribution:** Focusing on the state of **{nome_estado_filtro}** for **{area}** ({num_unicas} active institutions in the selection)."
             
         elif estado != 'TODOS':
-            nome_estado_filtro = MAPA_ESTADOS.get(estado, estado)
+            nome_estado_filtro = cfg.MAPA_ESTADOS.get(estado, estado)
             p1_mapa = f"🌍 **Geographic Distribution:** Focusing on the state of **{nome_estado_filtro}**, encompassing the {num_unicas} currently selected institutions."
             
         else:
@@ -200,27 +203,15 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
                 if pd.notna(divida) and divida > 0:
                     texto_risco.append(f"in **{nome_tipo}** institutions the median debt is **${divida:,.0f}**")
 
-        # Parágrafos 2, 3 e 4
         p2_donut = "🎓 **Student Distribution:** The academic choice of students in the current selection is distributed as follows: " + ", ".join(texto_tipos_alunos) + "."
         p3_scatter = "💰 **ROI Radar (Earnings):** The return on investment highlights discrepancies: " + " and ".join(texto_roi) + "."
         p4_box = "⚠️ **Debt Risk:** The financial effort required from students reveals that " + " and ".join(texto_risco) + "."
-
-        # Colunas de Evolução Salarial
-        COLUNA_PELL_ANO3 = 'EARN_PELL_NE_MDN_3YR'       
-        COLUNA_PELL_ANO4 = 'EARN_PELL_WNE_MDN_4YR'       
-        COLUNA_PELL_ANO5 = 'EARN_PELL_WNE_MDN_5YR'
-        COLUNA_NOPELL_ANO3 = 'EARN_NOPELL_NE_MDN_3YR'  
-        COLUNA_NOPELL_ANO4 = 'EARN_NOPELL_WNE_MDN_4YR'   
+      
+        COLUNA_PELL_ANO5 = 'EARN_PELL_WNE_MDN_5YR'  
         COLUNA_NOPELL_ANO5 = 'EARN_NOPELL_WNE_MDN_5YR' 
 
-        # Parágrafo 5: Evolução (Pell)
         if COLUNA_PELL_ANO5 in dff_kpis.columns and COLUNA_NOPELL_ANO5 in dff_kpis.columns:
-            pell_y3 = dff_kpis[COLUNA_PELL_ANO3].mean() if COLUNA_PELL_ANO3 in dff_kpis.columns else 0
-            pell_y4 = dff_kpis[COLUNA_PELL_ANO4].mean()
             pell_y5 = dff_kpis[COLUNA_PELL_ANO5].mean()
-            
-            nopell_y3 = dff_kpis[COLUNA_NOPELL_ANO3].mean() if COLUNA_NOPELL_ANO3 in dff_kpis.columns else 0
-            nopell_y4 = dff_kpis[COLUNA_NOPELL_ANO4].mean() 
             nopell_y5 = dff_kpis[COLUNA_NOPELL_ANO5].mean()
             
             fosso_salarial = nopell_y5 - pell_y5
@@ -233,7 +224,6 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
         else:
             p5_evolucao = "📈 **Salary Evolution:** Detailed numerical data on Pell Grants is not available for this selection."
 
-        # Parágrafo 6: Género
         if 'UGDS_WOMEN' in dff_kpis.columns and 'UGDS_MEN' in dff_kpis.columns:
             mulheres = dff_kpis['UGDS_WOMEN'].mean() * 100
             homens = dff_kpis['UGDS_MEN'].mean() * 100
@@ -259,7 +249,7 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
         zoom=zoom_foco, center=dict(lat=lat_foco, lon=lon_foco), color_continuous_scale=px.colors.sequential.Plasma,size_max=15, opacity=status_opacity)
     
     fig_mapa.update_traces(selected={'marker': {'opacity': 1.0}}, unselected={'marker': {'opacity': 0.15}})
-    fig_mapa.update_layout(mapbox_style="carto-positron", uirevision=estado, margin={"r":0, "t":0, "l":0, "b":50},
+    fig_mapa.update_layout(mapbox_style="carto-positron", uirevision=f"{estado}_{n_reset}", margin={"r":0, "t":0, "l":0, "b":50},
         coloraxis_colorbar=dict(orientation="h", y=-0.2, x=0.5, xanchor="center", len=0.5, thickness=15, title={'text': "Median Earnings ($)", 'side': 'top'})
     )
    
@@ -287,49 +277,97 @@ def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, cl
 
     fig_scatter.update_layout(margin={"r":10,"t":10,"l":10,"b":10}, plot_bgcolor='#FFFFFF',showlegend=True)
 
-    # 4. Gráfico Boxplot
+    # 4. Gráfico Boxplot (Original - Indebtedness Risk)
     fig_box = px.box(dff_kpis, x="Tipo_Instituicao", y="DEBT_ALL_STGP_ANY_MDN", color="Tipo_Instituicao", color_discrete_map=cores_setor,
         labels={'DEBT_ALL_STGP_ANY_MDN': 'Debt ($)', 'Tipo_Instituicao': 'Sector'}
     )
     fig_box.update_traces(hovertemplate="<b>Sector:</b> %{x}<br><b>Value:</b> $%{y:,.0f}")
     fig_box.update_layout(margin={"r":0,"t":10,"l":0,"b":0}, plot_bgcolor='#FFFFFF', showlegend=True, xaxis={'visible': False})
     
-    # 5. Gráfico de Linhas (Evolução)
-    df_evolucao = pd.DataFrame({
-        'Year': ['Year 3', 'Year 4', 'Year 5', 'Year 3', 'Year 4', 'Year 5'],
-        'Type': ['Pell Grant', 'Pell Grant', 'Pell Grant', 'No Pell', 'No Pell', 'No Pell'],
-        'Earnings': [
-            dff_kpis['EARN_PELL_NE_MDN_3YR'].mean() if 'EARN_PELL_NE_MDN_3YR' in dff_kpis else 0, 
-            dff_kpis['EARN_PELL_WNE_MDN_4YR'].mean() if 'EARN_PELL_WNE_MDN_4YR' in dff_kpis else 0,
-            dff_kpis['EARN_PELL_WNE_MDN_5YR'].mean() if 'EARN_PELL_WNE_MDN_5YR' in dff_kpis else 0,
-            dff_kpis['EARN_NOPELL_NE_MDN_3YR'].mean() if 'EARN_NOPELL_NE_MDN_3YR' in dff_kpis else 0,
-            dff_kpis['EARN_NOPELL_WNE_MDN_4YR'].mean() if 'EARN_NOPELL_WNE_MDN_4YR' in dff_kpis else 0,
-            dff_kpis['EARN_NOPELL_WNE_MDN_5YR'].mean() if 'EARN_NOPELL_WNE_MDN_5YR' in dff_kpis else 0
-        ]
-    })
+    # 5. Gráfico de Linhas (Evolução Pell)
+    if toggle_pell == 'salary':
+        df_evolucao = pd.DataFrame({
+            'Year': ['Year 1', 'Year 3', 'Year 4', 'Year 5', 'Year 1', 'Year 3', 'Year 4', 'Year 5'],
+            'Type': ['Pell Grant', 'Pell Grant', 'Pell Grant', 'Pell Grant', 'No Pell', 'No Pell', 'No Pell', 'No Pell'],
+            'Earnings': [
+                dff_kpis['EARN_PELL_WNE_MDN_1YR'].mean() if 'EARN_PELL_WNE_MDN_1YR' in dff_kpis else 0,
+                dff_kpis['EARN_PELL_NE_MDN_3YR'].mean() if 'EARN_PELL_NE_MDN_3YR' in dff_kpis else 0, 
+                dff_kpis['EARN_PELL_WNE_MDN_4YR'].mean() if 'EARN_PELL_WNE_MDN_4YR' in dff_kpis else 0,
+                dff_kpis['EARN_PELL_WNE_MDN_5YR'].mean() if 'EARN_PELL_WNE_MDN_5YR' in dff_kpis else 0,
+                
+                dff_kpis['EARN_NOPELL_WNE_MDN_1YR'].mean() if 'EARN_NOPELL_WNE_MDN_1YR' in dff_kpis else 0,
+                dff_kpis['EARN_NOPELL_NE_MDN_3YR'].mean() if 'EARN_NOPELL_NE_MDN_3YR' in dff_kpis else 0,
+                dff_kpis['EARN_NOPELL_WNE_MDN_4YR'].mean() if 'EARN_NOPELL_WNE_MDN_4YR' in dff_kpis else 0,
+                dff_kpis['EARN_NOPELL_WNE_MDN_5YR'].mean() if 'EARN_NOPELL_WNE_MDN_5YR' in dff_kpis else 0
+            ]
+        })
 
-    fig_evolution = px.line(df_evolucao, x='Year', y='Earnings', color='Type',
-        markers=True, color_discrete_map={'Pell Grant': '#F43F5E', 'No Pell': '#06B6D4'},
-        labels={'Earnings': 'Median Earnings ($)'}
-    )
-    fig_evolution.update_layout(plot_bgcolor='white', margin={"r":10,"t":10,"l":10,"b":10})
+        fig_evolution = px.line(df_evolucao, x='Year', y='Earnings', color='Type',
+            markers=True, color_discrete_map={'Pell Grant': '#F43F5E', 'No Pell': '#06B6D4'},
+            labels={'Earnings': 'Median Earnings ($)', 'Year': ''}
+        )
+        fig_evolution.update_traces(hovertemplate="<b>%{x}</b><br>%{data.name}: $%{y:,.0f}<extra></extra>")
+    else: # toggle_pell == 'debt'
+        divida_pell = dff_kpis['DEBT_PELL_STGP_ANY_MDN'].mean() if 'DEBT_PELL_STGP_ANY_MDN' in dff_kpis else 0
+        divida_nopell = dff_kpis['DEBT_NOPELL_STGP_ANY_MDN'].mean() if 'DEBT_NOPELL_STGP_ANY_MDN' in dff_kpis else 0
+        
+        fig_evolution = px.bar(x=['Pell Grant', 'No Pell'], y=[divida_pell, divida_nopell], color=['Pell Grant', 'No Pell'],
+            color_discrete_map={'Pell Grant': '#F43F5E', 'No Pell': '#06B6D4'}, labels={'x': 'Student Context', 'y': 'Median Debt ($)'})
+        fig_evolution.update_traces(hovertemplate="<b>%{x}</b>: $%{y:,.0f}<extra></extra>")
+        
+    fig_evolution.update_layout(plot_bgcolor='white', margin={"r":10,"t":10,"l":10,"b":10}, showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
 
-    # 6. Gráfico de Barras (Género)
-    total_homens = dff_kpis['UGDS_MEN'].mean() if not dff_kpis['UGDS_MEN'].isnull().all() else 0
-    total_mulheres = dff_kpis['UGDS_WOMEN'].mean() if not dff_kpis['UGDS_WOMEN'].isnull().all() else 0
+    # 6. Gráfico de Género (Com 3 Opções no Toggle)
+    if toggle_gender == 'demo':
+        total_homens = dff_kpis['UGDS_MEN'].mean() if not dff_kpis['UGDS_MEN'].isnull().all() else 0
+        total_mulheres = dff_kpis['UGDS_WOMEN'].mean() if not dff_kpis['UGDS_WOMEN'].isnull().all() else 0
+        
+        fig_gender = px.bar(x=['Men', 'Women'], y=[total_homens, total_mulheres], color=['Men', 'Women'],
+            color_discrete_map={'Men': '#06B6D4', 'Women': '#F43F5E'}, labels={'x': 'Gender', 'y': 'Proportion'})
+        fig_gender.update_traces(hovertemplate="<b>%{x}</b>: %{y:.1%}<extra></extra>")
+        fig_gender.update_layout(plot_bgcolor='white', showlegend=False, margin={"r":10,"t":10,"l":10,"b":10})
+        
+    elif toggle_gender == 'debt':
+        divida_homens = dff_kpis['DEBT_MALE_STGP_ANY_MDN'].mean() if 'DEBT_MALE_STGP_ANY_MDN' in dff_kpis else 0
+        divida_mulheres = dff_kpis['DEBT_NOTMALE_STGP_ANY_MDN'].mean() if 'DEBT_NOTMALE_STGP_ANY_MDN' in dff_kpis else 0
+        
+        fig_gender = px.bar(x=['Men', 'Women'], y=[divida_homens, divida_mulheres], color=['Men', 'Women'],
+            color_discrete_map={'Men': '#06B6D4', 'Women': '#F43F5E'}, labels={'x': 'Gender', 'y': 'Median Debt ($)'})
+        fig_gender.update_traces(hovertemplate="<b>%{x}</b>: $%{y:,.0f}<extra></extra>")
+        fig_gender.update_layout(plot_bgcolor='white', showlegend=False, margin={"r":10,"t":10,"l":10,"b":10})
     
-    fig_gender = px.bar(x=['Men', 'Women'], y=[total_homens, total_mulheres], color=['Men', 'Women'],
-        color_discrete_map={'Men': '#06B6D4', 'Women': '#F43F5E'}, labels={'x': 'Gender', 'y': 'Proportion'}
-    )
-    fig_gender.update_traces(hovertemplate="<b>%{x}</b>: %{y:.1%}")
-    fig_gender.update_layout(plot_bgcolor='white', showlegend=False, margin={"r":10,"t":10,"l":10,"b":10})
+    else: # toggle_gender == 'salary'
+        df_gender_evol = pd.DataFrame({
+            'Year': ['Year 1', 'Year 3', 'Year 4', 'Year 5', 'Year 1', 'Year 3', 'Year 4', 'Year 5'],
+            'Gender': ['Men', 'Men', 'Men', 'Men', 'Women', 'Women', 'Women', 'Women'],
+            'Earnings': [
+                dff_kpis['EARN_MALE_WNE_MDN_1YR'].mean() if 'EARN_MALE_WNE_MDN_1YR' in dff_kpis else 0,
+                dff_kpis['EARN_MALE_NE_MDN_3YR'].mean() if 'EARN_MALE_NE_MDN_3YR' in dff_kpis else 0,
+                dff_kpis['EARN_MALE_WNE_MDN_4YR'].mean() if 'EARN_MALE_WNE_MDN_4YR' in dff_kpis else 0,
+                dff_kpis['EARN_MALE_WNE_MDN_5YR'].mean() if 'EARN_MALE_WNE_MDN_5YR' in dff_kpis else 0,
+                
+                dff_kpis['EARN_NOMALE_WNE_MDN_1YR'].mean() if 'EARN_NOMALE_WNE_MDN_1YR' in dff_kpis else 0,
+                dff_kpis['EARN_NOMALE_NE_MDN_3YR'].mean() if 'EARN_NOMALE_NE_MDN_3YR' in dff_kpis else 0,
+                dff_kpis['EARN_NOMALE_WNE_MDN_4YR'].mean() if 'EARN_NOMALE_WNE_MDN_4YR' in dff_kpis else 0,
+                dff_kpis['EARN_NOMALE_WNE_MDN_5YR'].mean() if 'EARN_NOMALE_WNE_MDN_5YR' in dff_kpis else 0
+            ]
+        })
+
+        fig_gender = px.line(df_gender_evol, x='Year', y='Earnings', color='Gender',
+            markers=True, color_discrete_map={'Men': '#06B6D4', 'Women': '#F43F5E'},
+            labels={'Earnings': 'Median Earnings ($)', 'Year': ''})
+        
+        fig_gender.update_traces(hovertemplate="<b>%{x}</b><br>%{data.name}: $%{y:,.0f}<extra></extra>")
+        fig_gender.update_layout(plot_bgcolor='white', showlegend=True, margin={"r":10,"t":10,"l":10,"b":10},
+                                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
 
     return (card_resumo, 
             criar_kpi_card("TOTAL STUDENTS", k_al), 
             criar_kpi_card("MEDIAN DEBT", k_div), 
             criar_kpi_card("MEDIAN EARNINGS", k_sal), 
+            criar_kpi_card("DEFAULT RISK", k_def),
             fig_mapa, fig_donut, fig_scatter, fig_box, fig_evolution, fig_gender
     )
-    
+
 if __name__ == "__main__":
     app.run(debug=True)

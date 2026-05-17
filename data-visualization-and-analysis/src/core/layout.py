@@ -1,5 +1,6 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
+from src.config import MAPA_ESTADOS
 
 # =========================================================
 # 1. ESTILOS BASE 
@@ -25,37 +26,7 @@ CONTENT_STYLE = {
 }
 
 # =========================================================
-# 2. DICIONÁRIOS DE MAPEAMENTO
-# =========================================================
-MAPA_ESTADOS = {
-    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
-    'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
-    'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
-    'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
-    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
-    'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
-    'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
-    'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
-    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
-    'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming',
-    'DC': 'District of Columbia', 'PR': 'Puerto Rico', 'VI': 'Virgin Islands'
-}
-
-CIP_NAMES = {
-    '1': 'Agriculture', '3': 'Natural Resources', '4': 'Architecture', '5': 'Area/Gender Studies', 
-    '9': 'Communication', '10': 'Communications Tech', '11': 'Computer Science', '12': 'Personal Services', 
-    '13': 'Education', '14': 'Engineering', '15': 'Engineering Tech', '16': 'Foreign Languages', 
-    '19': 'Family/Consumer Sci', '22': 'Legal Professions', '23': 'English', '24': 'Liberal Arts', 
-    '25': 'Library Science', '26': 'Biology', '27': 'Mathematics', '29': 'Military Tech', 
-    '30': 'Multi/Interdisciplinary', '31': 'Parks & Recreation', '38': 'Philosophy/Religion', 
-    '39': 'Theology', '40': 'Physical Sciences', '41': 'Science Tech', '42': 'Psychology', 
-    '43': 'Homeland Security', '44': 'Public Admin', '45': 'Social Sciences', '46': 'Construction', 
-    '47': 'Mechanic/Repair', '48': 'Precision Production', '49': 'Transportation', '50': 'Visual/Performing Arts', 
-    '51': 'Health Professions', '52': 'Business/Marketing', '54': 'History'
-}
-
-# =========================================================
-# 3. FUNÇÕES AUXILIARES DE INTERFACE
+# 2. FUNÇÕES AUXILIARES DE INTERFACE
 # =========================================================
 # Função para cortar nomes longos e evitar que a barra lateral fique desconfigurada
 def truncar_nome(texto, limite=28):
@@ -65,7 +36,7 @@ def truncar_nome(texto, limite=28):
     return texto_str
 
 # =========================================================
-# 4. FUNÇÃO PRINCIPAL DE LAYOUT
+# 3. FUNÇÃO PRINCIPAL DE LAYOUT
 # =========================================================
 def serve_layout(df_final):
     # --- SIDEBAR (Barra Lateral Esquerda) ---
@@ -154,9 +125,10 @@ def serve_layout(df_final):
         
         # 1. KPIs (Topo)
         dbc.Row([
-            dbc.Col(html.Div(id='kpi-alunos-container'), width=4),
-            dbc.Col(html.Div(id='kpi-divida-container'), width=4),
-            dbc.Col(html.Div(id='kpi-salario-container'), width=4),
+            dbc.Col(html.Div(id='kpi-alunos-container'), width=3),
+            dbc.Col(html.Div(id='kpi-divida-container'), width=3),
+            dbc.Col(html.Div(id='kpi-salario-container'), width=3),
+            dbc.Col(html.Div(id='kpi-default-container'), width=3),
         ], className="mb-4"),
 
         # 2. Linha Superior: Mapa e Donut
@@ -196,7 +168,7 @@ def serve_layout(df_final):
             ], className="shadow-sm border-0 h-100"), width=4),
         ], className="mb-4"),
 
-        # 3. Linha do Meio: Scatter e Boxplot
+        # 3. Scatter e Boxplot
         dbc.Row([
             # Card do Scatter 
             dbc.Col(dbc.Card([
@@ -208,7 +180,7 @@ def serve_layout(df_final):
                 dbc.CardBody([dcc.Graph(id='graph-scatter', config={'displayModeBar': False})])
             ], className="shadow-sm border-0 h-100"), width=7),
 
-            # Card do Boxplot (Debt Risk)
+            # Card do Boxplot (Debt Risk) - Original
             dbc.Col(dbc.Card([
                 dbc.CardHeader([
                     html.H5("Indebtedness Risk", className="font-weight-bold mb-1"),
@@ -219,14 +191,28 @@ def serve_layout(df_final):
             ], className="shadow-sm border-0 h-100"), width=5),
         ]),
         
-        # 4. Linha Inferior: Evolução e Género
+       # 4. Linha Inferior: Evolução e Género
         dbc.Row([
-            # Card: Salary Evolution & Pell Grant Impact
+            # Card: Pell Grant Impact
             dbc.Col(dbc.Card([
                 dbc.CardHeader([
-                    html.H5("Salary Evolution & Pell Grant Impact", className="font-weight-bold mb-1"),
-                    html.P("Comparative trajectory of earnings for low-income (Pell) vs. high-income students", 
-                        className="text-muted mb-0", style={"fontSize": "0.85rem", "fontWeight": "normal"})
+                    html.Div([
+                        html.Div([
+                            html.H5("Pell Grant Impact", className="font-weight-bold mb-1"),
+                            html.P("Comparative trajectory of earnings and debt", 
+                                className="text-muted mb-0", style={"fontSize": "0.85rem", "fontWeight": "normal"})
+                        ]),
+                        dbc.RadioItems(
+                            id="toggle-pell",
+                            options=[
+                                {"label": "Salary Evolution", "value": "salary"},
+                                {"label": "Median Debt", "value": "debt"},
+                            ],
+                            value="salary",
+                            inline=False, # empilhar opções
+                            style={"fontSize": "0.85rem", "textAlign": "left"}
+                        )
+                    ], className="d-flex justify-content-between align-items-start")
                 ], className="bg-white border-0 pt-3 pb-2"),
 
                 dbc.CardBody([
@@ -234,12 +220,27 @@ def serve_layout(df_final):
                 ])
             ], className="shadow-sm border-0 h-100"), width=6),
 
-            # Card: Gender Enrollment Distribution
+            # Card: Gender Demographics & ROI
             dbc.Col(dbc.Card([
                 dbc.CardHeader([
-                    html.H5("Gender Enrollment Distribution", className="font-weight-bold mb-1"),
-                    html.P("Breakdown of male and female student proportions within the selected scope", 
-                        className="text-muted mb-0", style={"fontSize": "0.85rem", "fontWeight": "normal"})
+                    html.Div([
+                        html.Div([
+                            html.H5("Gender Demographics & ROI", className="font-weight-bold mb-1"),
+                            html.P("Breakdown of student proportions and financial outcomes", 
+                                className="text-muted mb-0", style={"fontSize": "0.85rem", "fontWeight": "normal"})
+                        ]),
+                        dbc.RadioItems(
+                            id="toggle-gender",
+                            options=[
+                                {"label": "Demographics", "value": "demo"},
+                                {"label": "Salary Evolution", "value": "salary"},
+                                {"label": "Median Debt", "value": "debt"},
+                            ],
+                            value="demo",
+                            inline=False,
+                            style={"fontSize": "0.85rem", "textAlign": "left"}
+                        )
+                    ], className="d-flex justify-content-between align-items-start")
                 ], className="bg-white border-0 pt-3 pb-2"),
 
                 dbc.CardBody([
@@ -248,9 +249,7 @@ def serve_layout(df_final):
             ], className="shadow-sm border-0 h-100"), width=6),
         ], className="mb-4 mt-4"),
         
-        # =========================================================
         # 5. RESUMO DINÂMICO 
-        # =========================================================
         html.Div(id='resumo-dinamico-container', className="mt-5 mb-4"),
         
     ], style=CONTENT_STYLE) 
