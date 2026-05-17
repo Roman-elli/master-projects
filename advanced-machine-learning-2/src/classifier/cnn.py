@@ -47,8 +47,7 @@ def train_cnn(model, train_loader, val_loader, criterion, optimizer, device, num
     best_val_loss = float('inf')
 
     for epoch in range(num_epochs):
-        print(f'\nEpoch {epoch+1}/{num_epochs}')
-        print('-' * 10)
+        print(f'Epoch {epoch+1}/{num_epochs}')
 
         for phase in ['train', 'val']:
             if phase == 'train':

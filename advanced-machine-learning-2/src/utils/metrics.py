@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 import torch
 from sklearn.metrics import classification_report
 import json
-from pathlib import Path
-from sklearn.metrics import classification_report
 
 # Baseline CNN
 def save_cnn_train(history, save_dir):
@@ -55,12 +53,10 @@ def evaluate_cnn(best_model, test_dataset, test_loader, device='cpu', results_di
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-    # 1. Relatório de Classificação em Texto (Para o console)
-    print("\n--- Relatório de Classificação ---")
+    # 1. Relatório de Classificação em Texto
     report_text = classification_report(
         all_labels, all_preds, target_names=test_dataset.classes, zero_division=0
     )
-    print(report_text)
 
     # 2. Relatório de Classificação em Dicionário (Para extrair as métricas)
     report_dict = classification_report(
@@ -81,7 +77,8 @@ def evaluate_cnn(best_model, test_dataset, test_loader, device='cpu', results_di
     print("="*40 + "\n")
 
     # 4. Lógica para extrair e salvar os resultados
-    if results_dir is not None:        
+    if results_dir is not None:
+        # --------------------------------------------------------------        
         summary = {
             "accuracy": accuracy,
             "macro_f1": macro_f1,
@@ -89,8 +86,13 @@ def evaluate_cnn(best_model, test_dataset, test_loader, device='cpu', results_di
         }
         with open(results_dir / 'baseline_summary.json', 'w') as f:
             json.dump(summary, f, indent=4)
-        # ----------------------------------------
-        
+
+        # --------------------------------------------------------------
+        full_report_path = results_dir / 'full_classification_report.txt'
+        with open(full_report_path, 'w', encoding='utf-8') as f:
+            f.write(report_text)
+
+        # --------------------------------------------------------------
         class_metrics = {k: v for k, v in report_dict.items() if k in test_dataset.classes}
         sorted_classes = sorted(class_metrics.items(), key=lambda item: item[1]['f1-score'])
         
@@ -100,6 +102,7 @@ def evaluate_cnn(best_model, test_dataset, test_loader, device='cpu', results_di
         with open(worst_classes_path, 'w') as f:
             json.dump(worst_15, f, indent=4)
             
+        print(f"Relatório de texto completo salvo em: {full_report_path}")
         print(f"Resumo global salvo em: {results_dir / 'baseline_summary.json'}")
         print(f"Lista das 15 piores classes salva em: {worst_classes_path}")
 
