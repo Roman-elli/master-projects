@@ -38,9 +38,6 @@ class BaselineCNN(nn.Module):
         return self.classifier(x)
     
 def train_cnn(model, train_loader, val_loader, criterion, optimizer, device, num_epochs=50, save_dir=None):
-    """
-    Treina o modelo por um número fixo de épocas, salvando o melhor modelo e o da última época.
-    """
     history = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
     
     best_model_wts = copy.deepcopy(model.state_dict())
