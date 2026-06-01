@@ -120,7 +120,7 @@ class PixelUNet(nn.Module):
     def forward(self, x, t, labels=None):
         t_emb = self.time_embed(t)
         
-        # Funde a label com o tempo para guiar a difusão
+        # Funde a label com o tempo
         if self.num_classes is not None and labels is not None:
             t_emb = t_emb + self.class_emb(labels)
             
@@ -182,7 +182,7 @@ class GaussianDiffusion:
         sqrt_one_minus_alpha_cumprod_t = self._get_index(self.sqrt_one_minus_alphas_cumprod, t, x.shape)
         sqrt_recip_alphas_t = 1. / torch.sqrt(self._get_index(self.alphas, t, x.shape))
         
-        # Passamos as labels ao modelo para orientar a remoção do ruído!
+        # Passamos as labels ao modelo para orientar a remoção do ruído
         predicted_noise = model(x, t, labels)
         
         model_mean = sqrt_recip_alphas_t * (x - betas_t * predicted_noise / sqrt_one_minus_alpha_cumprod_t)
@@ -235,7 +235,7 @@ def train_diffusion(model, loader, schedule, epochs=20, lr=2e-4, device=torch.de
             noise = torch.randn_like(x)
             x_t = schedule.q_sample(x_0=x, t=t, noise=noise)
             
-            # Tenta prever o ruído DADO o tempo e a LABEL
+            # Tenta prever o ruído dado o tempo e a LABEL
             pred_noise = model(x_t, t, labels)
             
             loss = F.mse_loss(pred_noise, noise)

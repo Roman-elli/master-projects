@@ -26,7 +26,7 @@ class CVAEObjective:
         latent_dim = trial.suggest_categorical('latent_dim', [64, 128, 256, 512])
         lr = trial.suggest_float('lr', 1e-5, 1e-3, log=True)
         
-        # Novos hiperparâmetros vitais para baixar o FID (Perceptual vs Diversidade)
+        # Novos hiperparâmetros para baixar o FID (Perceptual vs Diversidade)
         beta = trial.suggest_float('beta', 0.01, 0.2, log=True)
         perceptual_weight = trial.suggest_float('perceptual_weight', 0.5, 3.0)
 
@@ -96,7 +96,7 @@ class CGANObjective:
         self.epochs_trial = epochs_trial
 
     def __call__(self, trial):
-        # 1. Hiperparâmetros a testar para o optuna testar
+        # 1. Hiperparâmetros a testar 
         latent_dim = trial.suggest_categorical('latent_dim', [64, 100, 128])
         lr = trial.suggest_float('lr', 1e-4, 1e-3, log=True)
         embed_size = trial.suggest_categorical('embed_size', [50, 100, 128])
@@ -119,7 +119,6 @@ class CGANObjective:
         
         with torch.no_grad():
             n_amostras = 0
-            # Em vez de 1 batch, iteramos rapidamente até passar as 50 imagens
             for real_imgs, labels in self.val_loader:
                 real_imgs, labels = real_imgs.to(self.device), labels.to(self.device)
                 
@@ -130,7 +129,6 @@ class CGANObjective:
                 kid_metric.update(fake_imgs, real=False)
                 
                 n_amostras += real_imgs.size(0)
-                # 64 imagens (2 batches) é suficiente e ultra-rápido para o Optuna
                 if n_amostras >= 64: 
                     break
             
@@ -163,7 +161,7 @@ class DDPMObjective:
         
         schedule_trial = diff.GaussianDiffusion(num_timesteps=1000, device=self.device)
 
-        # 3. Treino super rápido de 10 épocas (modo silencioso)
+        # 3. Treino rápido de 10 épocas 
         _, history = diff.train_diffusion(
             model=unet_trial, 
             loader=self.train_loader, 

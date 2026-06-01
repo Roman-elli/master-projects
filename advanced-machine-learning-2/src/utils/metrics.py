@@ -177,7 +177,7 @@ def analyze_augmentation_candidates(report_dict, save_dir=None):
 
     plt.show()
 
-    # 4. Filtrar e listar APENAS as recomendadas para geração
+    # 4. Filtrar e listar as recomendadas para geração
     recomendadas = df[df['Estrategia'].str.contains('Gerar Dados')].copy()
 
     # Ordenar pelas que têm o pior F1-score primeiro
@@ -197,8 +197,8 @@ def analyze_augmentation_candidates(report_dict, save_dir=None):
 
 def plot_f1_tradeoff(baseline_metrics_dict, new_metrics_dict, save_dir, aug_type="cVAE", top_n=5):
     """
-    Gera um Gráfico de Barras Divergentes SOTA mostrando as classes que mais ganharam 
-    e as que mais perderam F1-Score (Efeito Balão).
+    Gera um Gráfico de Barras Divergentes mostrando as classes que mais ganharam 
+    e as que mais perderam F1-Score.
     """
     # 1. Calcular as diferenças (Deltas) para todas as classes
     deltas = []
@@ -228,12 +228,12 @@ def plot_f1_tradeoff(baseline_metrics_dict, new_metrics_dict, save_dir, aug_type
     # Unir num só DataFrame para o gráfico
     plot_df = pd.concat([piores, melhores])
     
-    # ==========================================
-    # DESENHAR O GRÁFICO SOTA
-    # ==========================================
+    # ====================
+    # DESENHAR O GRÁFICO 
+    # ====================
     fig, ax = plt.subplots(figsize=(10, 7))
     
-    # Definir cores dinamicamente: Vermelho para perdas, Verde para ganhos
+    # Vermelho para perdas, Verde para ganhos
     cores = ['#e74c3c' if val < 0 else '#2ecc71' for val in plot_df['Delta']]
     
     y_pos = np.arange(len(plot_df))
@@ -246,7 +246,7 @@ def plot_f1_tradeoff(baseline_metrics_dict, new_metrics_dict, save_dir, aug_type
     ax.set_yticks(y_pos)
     ax.set_yticklabels(plot_df['Classe'], fontweight='bold', fontsize=10)
     
-    # Remover as bordas (Spines) para um aspeto limpo e científico
+    # Remover as bordas (Spines) 
     for spine in ['top', 'right', 'bottom', 'left']:
         ax.spines[spine].set_visible(False)
     
@@ -277,7 +277,7 @@ def plot_f1_tradeoff(baseline_metrics_dict, new_metrics_dict, save_dir, aug_type
     save_path = os.path.join(save_dir, f'{aug_type.lower()}_f1_tradeoff_diverging.png')
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
-    print(f"✅ Gráfico Divergente (Ganhos vs Perdas) salvo em: {save_path}")
+    print(f"Gráfico Divergente (Ganhos vs Perdas) salvo em: {save_path}")
 
 def parse_classification_report_txt(filepath):
     """Lê o .txt do sklearn e converte de volta para o formato de dicionário."""
@@ -305,7 +305,7 @@ def parse_classification_report_txt(filepath):
 
 # cVAE
 def evaluate_vae(history, save_dir):
-    """Gera gráficos de convergência detalhados SOTA para o VAE."""
+    """Gera gráficos de convergência detalhados para o VAE."""
     epochs = range(1, len(history['train_loss']) + 1)
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 5))
@@ -341,12 +341,11 @@ def evaluate_vae(history, save_dir):
 # cDCGAN
 def evaluate_gan(history, save_dir):
     """
-    Gera o gráfico da dinâmica do treino adversário SOTA (Min-Max Game) para a GAN.
+    Gera o gráfico da dinâmica do treino adversário (Min-Max Game) para a GAN.
     """
     # A history da GAN tem 'g_loss' e 'd_loss'
     epochs = range(1, len(history['g_loss']) + 1)
     
-    # Criamos apenas 1 gráfico largo, pois a GAN só tem estas duas métricas principais
     plt.figure(figsize=(12, 5))
     
     # Plot das Losses
@@ -385,7 +384,7 @@ def evaluate_diff(history, save_dir):
     # A history do DDPM tem apenas a chave 'loss' (MSE)
     epochs = range(1, len(history['loss']) + 1)
     
-    # Criamos um gráfico com as mesmas dimensões da GAN para manter o padrão na tese
+    # Criamos um gráfico com as mesmas dimensões da GAN para manter o padrão 
     plt.figure(figsize=(12, 5))
     
     # Plot da Loss (Cor diferente para distinguir facilmente das GANs)

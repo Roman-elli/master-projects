@@ -12,8 +12,6 @@ def generate_cvae_samples_grid(model, target_classes, class_to_idx, latent_dim, 
     
     fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(15, 4))
     
-    # Quando é só 1 linha, o matplotlib retorna um array 1D, mas o flatten garante 
-    # que o código não quebra se um dia você mudar para 2x2.
     axes = axes.flatten()
 
     print("A gerar amostras representativas para as 4 classes alvo...")
@@ -63,7 +61,7 @@ def generate_cgan_samples_grid(model, target_classes, class_to_idx, latent_dim, 
             label = torch.tensor([class_idx], dtype=torch.long).to(device)
             z = torch.randn(1, latent_dim).to(device)
 
-            # A principal diferença: a GAN usa o forward direto em vez de decode()
+            # forward em vez de decode()
             fake_img = model(z, label).cpu().squeeze(0)
             
             # Converter de (C, H, W) para (H, W, C)
@@ -111,8 +109,7 @@ def generate_ddpm_samples_grid(model, schedule, target_classes, class_to_idx, im
             # 1. Prepara a Label Condicional
             label = torch.tensor([class_idx], dtype=torch.long).to(device)
             
-            # 2. MÁGICA SOTA: O Loop Reverso
-            # Passamos a Label para a UNet saber o que esculpir a partir do ruído
+            # 2. Passamos a Label para a UNet saber o que esculpir a partir do ruído
             fake_img = schedule.p_sample_loop(
                 model=model, 
                 shape=(1, 3, image_size, image_size), 
@@ -186,9 +183,9 @@ def plot_augmentation_comparison(baseline_csv_path, new_metrics_json, target_cla
     
     # 4. Gerar um gráfico independente para cada métrica
     for titulo, base_vals, aug_vals in metricas:
-        fig, ax = plt.subplots(figsize=(8, 6)) # Tamanho individual confortável
+        fig, ax = plt.subplots(figsize=(8, 6)) # Tamanho individual
         
-        # Adicionar grelha subtil APENAS no eixo Y e enviá-la para o fundo (zorder=0)
+        # Adicionar grelha subtil no eixo Y e enviá-la para o fundo (zorder=0)
         ax.yaxis.grid(True, linestyle='--', alpha=0.6, zorder=0)
         
         # Desenhar as barras por cima da grelha (zorder=3)
@@ -200,14 +197,14 @@ def plot_augmentation_comparison(baseline_csv_path, new_metrics_json, target_cla
         ax.set_title(f'Impacto nas Classes Críticas: {titulo}', fontweight='bold', fontsize=14, pad=15)
         ax.set_xticks(x)
         
-        # Rotação das labels baseada no tamanho das palavras para não encavalitarem
+        # Rotação das labels baseada no tamanho das palavras
         ax.set_xticklabels(classes_encontradas, rotation=0, fontsize=11, fontweight='bold')
         
         # Dar espaço extra no topo para os números não cortarem
         ax.set_ylim(0, 1.2) 
         ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0]) # Forçar escala limpa até 1.0
         
-        # Remover bordas desnecessárias (Design minimalista SOTA)
+        # Remover bordas desnecessárias
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         
@@ -220,7 +217,7 @@ def plot_augmentation_comparison(baseline_csv_path, new_metrics_json, target_cla
                         textcoords="offset points",
                         ha='center', va='bottom', fontsize=10, fontweight='bold', color='#2c3e50')
         
-        # A MÁGICA DA LEGENDA: Colocada fora da área do gráfico (em baixo, centrada)
+        # Legenda fora da área do gráfico (em baixo, centrada)
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.12), ncol=2, frameon=False, fontsize=11)
         
         plt.tight_layout()
@@ -230,4 +227,4 @@ def plot_augmentation_comparison(baseline_csv_path, new_metrics_json, target_cla
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.show()
         
-        print(f"✅ Gráfico '{titulo}' salvo em: {save_path}")
+        print(f"Gráfico '{titulo}' salvo em: {save_path}")

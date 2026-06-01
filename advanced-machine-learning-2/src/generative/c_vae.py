@@ -103,17 +103,15 @@ def vae_loss_function(recon_x, x, mu, logvar, loss_fn_vgg, beta=0.01, perceptual
     x_scaled = x * 2.0 - 1.0
     P_LOSS = loss_fn_vgg(recon_x_scaled, x_scaled).mean()
     
-    # Ao tirar a média, o KLD fica na mesma casa decimal do MSE, impedindo o Colapso Posterior!
+    # Ao tirar a média, o KLD fica na mesma casa decimal do MSE
     KLD = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
     
-    # Agora a balança é justa. Beta e perceptual_weight vão funcionar como deviam.
     total_loss = MSE + (perceptual_weight * P_LOSS) + (beta * KLD)
     
     return total_loss, MSE, P_LOSS, KLD
 
 def train_cvae(model, train_loader, val_loader, optimizer, device, num_epochs=50, save_dir=None):
     """Ciclo de treino completo para o cVAE com LPIPS e Model Checkpointing."""
-    # Adicionamos o 'train_perceptual' ao histórico para você monitorar
     history = {'train_loss': [], 'val_loss': [], 'train_mse': [], 'train_perceptual': [], 'train_kld': []}
     
     # Inicializa a VGG pré-treinada para a Perda Perceptual (congela os pesos automaticamente)
@@ -141,7 +139,7 @@ def train_cvae(model, train_loader, val_loader, optimizer, device, num_epochs=50
             loss.backward()
             optimizer.step()
             
-            # Como usamos reduction='mean', multiplicamos pelo tamanho do batch atual para a média final
+            # reduction='mean', multiplicamos pelo tamanho do batch atual para a média final
             batch_size = inputs.size(0)
             train_loss += loss.item() * batch_size
             train_mse_loss += mse.item() * batch_size

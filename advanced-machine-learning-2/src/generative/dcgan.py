@@ -15,7 +15,7 @@ class cDCGenerator(nn.Module):
             nn.BatchNorm2d(ngf * 8),
             nn.ReLU(True),
 
-            # MÁGICA SOTA: Força a diversidade quebrando a memorização do Mode Collapse
+            # Força a diversidade quebrando a memorização do Mode Collapse
             nn.Dropout2d(0.3),
 
             # Camada 2: 4x4 -> 8x8
@@ -73,7 +73,7 @@ class cDCDiscriminator(nn.Module):
             # Camada 5: 4x4 -> 1x1
             nn.Conv2d(ndf * 8, 1, 4, 1, 0, bias=False),
 
-            # Camada de Segurança (força sempre a ser 1x1, independentemente de erros de arredondamento)
+            # força sempre a ser 1x1
             nn.AdaptiveAvgPool2d(1),
             nn.Sigmoid(),
         )
@@ -102,6 +102,7 @@ def train_cgan(generator, discriminator, loader, latent_dim, epochs=20, lr=2e-4,
     opt_d = torch.optim.Adam(discriminator.parameters(), lr=lr_d, betas=(0.5, 0.999))
 
     history = {'g_loss': [], 'd_loss': []}
+    
     generator.train()
     discriminator.train()
 
@@ -113,14 +114,13 @@ def train_cgan(generator, discriminator, loader, latent_dim, epochs=20, lr=2e-4,
         d_running = 0.0
         n_batches = 0
 
-        # Interruptor Silencioso para o Optuna não encher o ecrã
         iterator = tqdm(loader, desc=f'Epoch {epoch + 1}/{epochs}', leave=False) if verbose else loader
 
         for real, labels in iterator:
             real = real.to(device)
             labels = labels.to(device)
 
-            # Lemos o tamanho real exato deste lote específico
+            # Tamanho real deste lote 
             bs = real.size(0)
 
             # Labels Reais = 0.8 (Smoothing), Labels Falsas = 0.0
@@ -142,7 +142,7 @@ def train_cgan(generator, discriminator, loader, latent_dim, epochs=20, lr=2e-4,
             pred_fake = discriminator(fake.detach(), labels) # .detach() bloqueia o gradiente de passar pro gerador
             d_loss_fake = criterion(pred_fake, fake_targets)
 
-            # 1.3 Atualizar Pesos do Discriminador (Dividido por 2 para estabilidade SOTA)
+            # 1.3 Atualizar Pesos do Discriminador (Dividido por 2 para estabilidade)
             d_loss = (d_loss_real + d_loss_fake) / 2
             d_loss.backward()
             opt_d.step()
@@ -155,7 +155,7 @@ def train_cgan(generator, discriminator, loader, latent_dim, epochs=20, lr=2e-4,
             # Avaliamos as imagens falsas novamente
             preds = discriminator(fake, labels)
 
-            # O Gerador quer que as previsões sejam 1 perfeitas (Sem smoothing para o G!)
+            # O Gerador quer que as previsões sejam 1 perfeitas (Sem smoothing para o G)
             g_targets = torch.ones(bs, 1, device=device)
             g_loss = criterion(preds, g_targets)
 

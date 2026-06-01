@@ -13,8 +13,8 @@ RESULTS_DIR = ROOT_DIR / "results"
 GRAPH_RESULTS_DIR = RESULTS_DIR / "graphs"
 
 # CNN path variables
-CNN_RESULTS_DIR = RESULTS_DIR / "models" / "cnn_seed_100" # "cnn_seed_42" "cnn_seed_100"
-CNN_MODELS_DIR = CNN_RESULTS_DIR / "models"
+CNN_RESULTS_DIR = RESULTS_DIR / "models" # "cnn_seed_42" "cnn_seed_100"
+CNN_MODELS_DIR = CNN_RESULTS_DIR
 CNN_PLOTS_DIR = CNN_RESULTS_DIR / "plots"
 
 TARGET_CLASSES_PATH = CNN_RESULTS_DIR / 'classes_para_augmentar.csv' 
