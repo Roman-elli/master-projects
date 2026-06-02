@@ -42,7 +42,7 @@ def merge_datasets():
     # Usamos 'left' para garantir que não perdemos nenhum curso do teu dataset original
     df_final = pd.merge(df_limpo, df_geo, on='UNITID', how='left')
 
-    df_final = df_final.dropna(subset=cfg.important_institution_cols, how='any')
+    df_final = df_final.dropna(subset=['CONTROL'], how='any')
 
     # Guardar o ficheiro
     df_final.to_csv('data/merged_data.csv', index=False)

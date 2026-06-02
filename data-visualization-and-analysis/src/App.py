@@ -51,6 +51,7 @@ app.layout = serve_layout(df_final)
      Input('toggle-pell', 'value'),
      Input('toggle-gender', 'value')]
 )
+
 def atualizar_dashboard(estado, nivel, tipo, area, click_mapa, selected_mapa, click_donut, click_scatter, click_box, n_reset, toggle_pell, toggle_gender):
     # Identificar qual foi a ação do utilizador que disparou o callback
     trigger_id = ctx.triggered_id
