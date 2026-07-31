@@ -14,7 +14,7 @@ def get_stock_data(tickers):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         # Descarregar os dados
-    data = yf.download(tickers, start=cfg.TRAIN_START, end=cfg.TEST_END)['Close']    
+    data = yf.download(tickers, start=cfg.DATA_START, end=cfg.DATA_END)['Close']    
     print(f"-> Dados descarregados: {data.shape[0]} dias, {data.shape[1]} ações.")
     
     # 1. Definir o limite mínimo de dados válidos que uma ação deve ter (ex: 95% dos dias)
@@ -178,7 +178,7 @@ def setup_results_dir(cfg):
 
 def compare_strategies(trades_global, trades_specific, trades_cross, capital_inicial, save_dir):
     """
-    Gera um gráfico SOTA comparando a Curva de Capital de 3 abordagens (Global, Específica e Cross)
+    Gera gráficos separados comparando a Curva de Capital e a precisão das 3 abordagens (Global, Específica e Cross)
     e exporta um relatório completo de métricas para CSV e TXT.
     """
     if trades_global.empty and trades_specific.empty and trades_cross.empty:
@@ -253,7 +253,7 @@ def compare_strategies(trades_global, trades_specific, trades_cross, capital_ini
             
     print(f"-> Relatórios de métricas salvos em: {save_dir}/performance_metrics.csv (e .txt)")
 
-    # --- 3. GRÁFICOS SOTA (Evolução de Capital e Barras) ---
+    # --- 3. GRÁFICOS SOTA (Evolução de Capital e Barras SEPARADOS) ---
     def process_equity(df):
         if df is None or df.empty: return pd.Series(dtype=float)
         df = df.sort_values(by='exit_date')
@@ -267,26 +267,34 @@ def compare_strategies(trades_global, trades_specific, trades_cross, capital_ini
 
     df_compare = pd.DataFrame({'Global': eq_global, 'Específico': eq_specific, 'Cross': eq_cross}).ffill().fillna(capital_inicial)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 6), gridspec_kw={'width_ratios': [2, 1]})
-    
-    # Linhas de Capital
+    # ---------------------------------------------------------
+    # GRÁFICO 1: EVOLUÇÃO DO CAPITAL
+    # ---------------------------------------------------------
+    fig1, ax1 = plt.subplots(figsize=(12, 6))
     ax1.plot(df_compare.index, df_compare['Global'], label=f"Global ({metrics_global['Retorno Total (%)']}%)", color='#1f77b4', linewidth=2)
     ax1.plot(df_compare.index, df_compare['Específico'], label=f"Específico ({metrics_specific['Retorno Total (%)']}%)", color='#ff7f0e', linewidth=2)
     ax1.plot(df_compare.index, df_compare['Cross'], label=f"Cross-Testing ({metrics_cross['Retorno Total (%)']}%)", color='#2ca02c', linewidth=2)
     ax1.axhline(y=capital_inicial, color='gray', linestyle='--', alpha=0.5)
     
-    ax1.set_title('Comparação SOTA: Evolução de Capital OOS', fontsize=14, fontweight='bold')
+    ax1.set_title('Evolução de Capital', fontsize=14, fontweight='bold')
     ax1.set_ylabel('Capital ($)')
     ax1.legend(loc='upper left')
     ax1.grid(True, alpha=0.3)
 
-    # Barras de Win-Rate
+    fig1.tight_layout()
+    fig1.savefig(f"{save_dir}/comparison_equity.png", dpi=300, transparent=False)
+    plt.show()
+
+    # ---------------------------------------------------------
+    # GRÁFICO 2: PROPORÇÃO DE WIN-RATE
+    # ---------------------------------------------------------
     metricas_barras = {
         'Modelo': ['Global', 'Específico', 'Cross'],
         'Trades': [metrics_global['Total Trades'], metrics_specific['Total Trades'], metrics_cross['Total Trades']],
         'WinRate': [metrics_global['Win-Rate (%)'], metrics_specific['Win-Rate (%)'], metrics_cross['Win-Rate (%)']]
     }
     
+    fig2, ax2 = plt.subplots(figsize=(8, 6))
     ax2.bar(['Global', 'Específico', 'Cross'], metricas_barras['WinRate'], color=['#1f77b4', '#ff7f0e', '#2ca02c'], alpha=0.7)
     for i, v in enumerate(metricas_barras['WinRate']):
         ax2.text(i, v + 1, f"{v:.1f}%\n({metricas_barras['Trades'][i]} trades)", ha='center', fontweight='bold')
@@ -296,11 +304,11 @@ def compare_strategies(trades_global, trades_specific, trades_cross, capital_ini
     # Ajusta o eixo Y para não cortar o texto do topo da barra
     ax2.set_ylim(0, max(metricas_barras['WinRate']) + 15 if metricas_barras['WinRate'] else 100)
 
-    plt.tight_layout()
-    plt.savefig(f"{save_dir}/comparison_sota.png", dpi=300, transparent=False)
+    fig2.tight_layout()
+    fig2.savefig(f"{save_dir}/comparison_winrate.png", dpi=300, transparent=False)
     plt.show()
-    print(f"-> Gráfico comparativo SOTA salvo em: {save_dir}/comparison_sota.png")
-
+    
+    print(f"-> Gráficos guardados separadamente em: {save_dir}/comparison_equity.png e comparison_winrate.png")
 
 def generate_trade_plots(trades_df, spreads_dict, save_dir, model_name):
     """

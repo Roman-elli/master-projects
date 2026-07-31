@@ -5,15 +5,16 @@ from tqdm import tqdm
 from utils.metrics import estimate_ou_parameters
 import config as cfg
 
-def build_global_dataset(valid_pairs_df, spreads_dict, split_date, window, lower_pct, upper_pct, sl_mult):
+def build_global_dataset(valid_pairs_df, spreads_dict, train_start, train_end, window, lower_pct, upper_pct, sl_mult):
     """Gera o dataset global calculando ECDF, parâmetros OU e aplicando a Tripla Barreira."""
     global_dataset_list = []
 
     for _, row in tqdm(valid_pairs_df.iterrows(), total=len(valid_pairs_df)):
         s1, s2 = row['ativo_y'], row['ativo_x']
         pair_name = f"{s1}_{s2}"
-        spread = spreads_dict[pair_name].loc[:split_date]
         
+        spread = spreads_dict[pair_name].loc[train_start:train_end]
+            
         # 1. Feature Engineering
         df_feat = pd.DataFrame(index=spread.index)
         df_feat['spread'] = spread

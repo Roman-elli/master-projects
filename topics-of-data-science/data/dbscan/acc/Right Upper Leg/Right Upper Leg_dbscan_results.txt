@@ -1,5 +1,0 @@
-DBSCAN (ACC - Right Upper Leg)
-eps=0.5, min_samples=10
-Clusters encontrados: 21
-Total de amostras: 50000
-Outliers: 6110 (12.22%)

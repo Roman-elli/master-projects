@@ -1,5 +1,0 @@
-DBSCAN (MAG - Right Wrist)
-eps=0.5, min_samples=10
-Clusters encontrados: 1
-Total de amostras: 50000
-Outliers: 13 (0.03%)

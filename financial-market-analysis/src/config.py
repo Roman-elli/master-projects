@@ -1,15 +1,22 @@
 # Variables, paths, parameters... definition
 
 # config.py
-DOWNLOAD_STOCKS = True
+DOWNLOAD_STOCKS = False
 TRAIN_MODELS = True
 
-# Definição Explícita de Treino e Teste
-TRAIN_START = "2010-01-01" 
-TRAIN_END = "2015-12-31"
+# config.py
+# 1. Descarregar todos os dados necessários de uma vez
+# (Se a tua função de descarregar dados não baixar de 2008 a 2015, não haverá dados para testar)
+DATA_START = "2008-01-01" 
+DATA_END = "2026-05-31" 
 
-TEST_START = "2016-01-01"
-TEST_END = "2025-12-31"
+# 2. Período de Treino (Onde a IA aprende a física do elástico)
+TRAIN_START = "2022-01-01" 
+TRAIN_END = "2025-12-31"
+
+# 3. Período de Teste Cego / Backcasting (Apanha a Crise de 2008)
+TEST_START = "2008-01-01"
+TEST_END = "2020-12-31"
 
 HALF_LIFE_TIME_LIMIT = 3
 P_VALUE_ADF = 0.05
@@ -17,7 +24,7 @@ HURST_VALUE = 0.4
 WINDOW = 60
 LOWER_PERCENTILE, UPPER_PERCENTILE = 0.03, 0.97
 SL_MULTIPLIER = 1.2
-LIMIAR_FINAL = 0.6
+LIMIAR_FINAL = 0.7 # 0.6 0.70
 CAPITAL_INICIAL = 100000
 ALAVANCAGEM_FUNDO = 3  
 MAX_ALLOCATION = 0.2
