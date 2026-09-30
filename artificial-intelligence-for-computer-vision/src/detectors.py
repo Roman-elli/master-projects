@@ -20,5 +20,6 @@ def detect_keypoints(image, detector):
     else:
         gray_image = image
         
+    # Extrai APENAS as coordenadas, garantindo que algoritmos como o FAST não crasham
     keypoints = detector.detect(gray_image, None)
     return keypoints
