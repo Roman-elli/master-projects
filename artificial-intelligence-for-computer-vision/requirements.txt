@@ -123,8 +123,8 @@ tifffile==2025.5.10
 tinycss2==1.5.1
 tokenizers==0.23.2
 tomli==2.4.1
-torch==2.14.1+cu132
-torchvision==0.29.1+cu132
+torch==2.14.1
+torchvision==0.29.1
 tornado==6.5.10
 tqdm==4.70.1
 traitlets==5.16.1

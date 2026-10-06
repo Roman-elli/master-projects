@@ -14,15 +14,7 @@ conda create --name cvc python=3.10 -y
 conda activate cvc
 ```
 
-- **Passo 2: Instalar o motor PyTorch (Escolha a sua opção)**  
-  - **Opção A (Com GPU NVIDIA):** Bashpip install torch torchvision --index-url [https://download.pytorch.org/whl/cu132](https://download.pytorch.org/whl/cu132)
-(Nota: Se a sua placa for mais antiga, substitua cu132 pela versão CUDA apropriada, ex: cu118 ou cu126).  
-  - **Opção B (Apenas CPU):** Abra o ficheiro requirements.txt e apague as linhas referentes ao torch e torchvision. Execute:
-  ```Bash
-  pip install torch torchvision --index-url [https://download.pytorch.org/whl/cpu](https://download.pytorch.org/whl/cpu)
-  ```
-
-- **Passo 3: Instalar as dependências do projeto**  
+- **Passo 2: Instalar as dependências do projeto**  
 ```bash
 pip install -r requirements.txt
 ```
