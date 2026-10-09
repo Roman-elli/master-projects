@@ -21,46 +21,108 @@ import src.config as cfg
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 def preprocess_features(df):
-    """Prepara as features para modelação (Encoding e Scaling)."""
-    drop_cols = ['PatientId', 'ScheduledDay', 'AppointmentDay', 'No-show']
+    """Prepara as features para modelação (Feature Engineering, Encoding e Scaling)."""
+    
+    # Garantir que não alteramos o dataframe original por engano
+    df = df.copy()
+    
+    # ---------------------------------------------------------
+    # CAMINHO 1: Histórico do Paciente (Comportamento Passado)
+    # ---------------------------------------------------------
+    # 1. Ordenar por data da consulta é OBRIGATÓRIO para não usar o futuro para prever o passado
+    df = df.sort_values(by='AppointmentDay')
+    
+    df['NoShow_num'] = df['No-show'].astype(int)
+    
+    # 2. Contar quantas consultas o paciente já teve ANTES desta
+    df['Past_Appointments'] = df.groupby('PatientId').cumcount()
+    
+    # 3. Contar a soma de faltas que o paciente teve ANTES desta (shift(1) garante que a consulta atual não conta)
+    df['Past_NoShows'] = df.groupby('PatientId')['NoShow_num'].transform(lambda x: x.shift().cumsum()).fillna(0)
+    
+    # 4. Criar a feature de ouro: Taxa Histórica de Faltas do paciente
+    # (Se é a primeira vez que o paciente vai à clínica, a taxa é 0)
+    df['Patient_NoShow_Rate'] = np.where(df['Past_Appointments'] > 0, 
+                                         df['Past_NoShows'] / df['Past_Appointments'], 
+                                         0)
+    
+    # ---------------------------------------------------------
+    # CAMINHO 2: Otimizar a Variável WaitingDays
+    # ---------------------------------------------------------
+    # Criar categorias de tempo baseadas na psicologia humana e logística
+    bins = [-1, 0, 3, 7, 14, 30, float('inf')]
+    labels = ['MesmoDia', '1-3_Dias', '4-7_Dias', '8-14_Dias', '15-30_Dias', 'Mais_de_30_Dias']
+    
+    # pd.cut agrupa os números contínuos nas categorias que definimos
+    df['WaitingDays_Group'] = pd.cut(df['WaitingDays'], bins=bins, labels=labels)
+
+    # Adicionar logo a seguir à criação das categorias do WaitingDays
+    df["AgeGroup"] = pd.cut(
+        df["Age"],
+        bins=[-1, 12, 25, 45, 65, 120],
+        labels=["Crianca", "Jovem", "Adulto", "MeiaIdade", "Idoso"]
+    )
+
+    # ---------------------------------------------------------
+    # CAMINHO 3: Risco Histórico do Bairro (Target Encoding Temporal)
+    # ---------------------------------------------------------
+    # Em vez de 81 colunas (One-Hot), criamos 1 única coluna com a taxa de faltas acumulada daquele bairro.
+    # O shift().expanding().mean() calcula a média de faltas do bairro até à data da consulta, sem olhar para a própria consulta.
+    df['Neighbourhood_Risk'] = df.groupby('Neighbourhood')['NoShow_num'].transform(
+        lambda x: x.shift().expanding().mean()
+    ).fillna(0) # fillna(0) para o primeiro paciente de sempre de um bairro
+    
+    
+    # ---------------------------------------------------------
+    # PREPARAÇÃO FINAL (Encoding e Scaling)
+    # ---------------------------------------------------------
+    # IMPORTANTE: Temos de adicionar o 'Neighbourhood' à lista do que é apagado, 
+    # para que o get_dummies não o transforme em 81 colunas!
+    drop_cols = ['PatientId', 'ScheduledDay', 'AppointmentDay', 'No-show', 'NoShow_num', 'Neighbourhood']
+        
     X = df.drop(columns=[col for col in drop_cols if col in df.columns])
     y = df['No-show'].astype(int)
     
-    # One-Hot Encoding para variáveis categóricas
+    # O pd.get_dummies vai transformar o nosso novo 'WaitingDays_Group' 
+    # (e o Gender, etc.) em várias colunas de 0s e 1s automaticamente.
     X = pd.get_dummies(X, drop_first=True)
     
-    # Scaling (fundamental para KNN e Regressão Logística)
+    # Scaling
     scaler = StandardScaler()
     X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+    
+    # Converter para float32 para poupar memória e acelerar (Downcast)
+    X_scaled = X_scaled.astype('float32')
     
     return X_scaled, y
 
 def get_optuna_model(trial, model_name):
-    """Define o espaço de pesquisa de hiperparâmetros para cada modelo."""
+    """Define o espaço de pesquisa de hiperparâmetros para cada modelo com pesos balanceados."""
     if model_name == 'LogisticRegression':
         C = trial.suggest_float('C', 1e-4, 10.0, log=True)
-        return LogisticRegression(C=C, max_iter=1000, random_state=42)
+        return LogisticRegression(C=C, class_weight='balanced', max_iter=1000, random_state=42)
     
     elif model_name == 'KNN':
         n_neighbors = trial.suggest_int('n_neighbors', 3, 30)
-        return KNeighborsClassifier(n_neighbors=n_neighbors)
+        # O KNN não tem suporte direto para class_weight na sua implementação base
+        return KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=-1)
     
     elif model_name == 'RandomForest':
         n_estimators = trial.suggest_int('n_estimators', 50, 200)
         max_depth = trial.suggest_int('max_depth', 3, 15)
-        return RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+        return RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, class_weight='balanced', random_state=42, n_jobs=-1)
     
     elif model_name == 'XGBoost':
         n_estimators = trial.suggest_int('n_estimators', 50, 200)
         max_depth = trial.suggest_int('max_depth', 3, 10)
         learning_rate = trial.suggest_float('learning_rate', 0.01, 0.3)
-        return XGBClassifier(n_estimators=n_estimators, max_depth=max_depth, learning_rate=learning_rate, use_label_encoder=False, eval_metric='logloss', random_state=42)
+        return XGBClassifier(n_estimators=n_estimators, max_depth=max_depth, learning_rate=learning_rate, scale_pos_weight=3.95, eval_metric='logloss', random_state=42, n_jobs=-1)
     
     elif model_name == 'LightGBM':
         n_estimators = trial.suggest_int('n_estimators', 50, 200)
         max_depth = trial.suggest_int('max_depth', 3, 10)
         learning_rate = trial.suggest_float('learning_rate', 0.01, 0.3)
-        return LGBMClassifier(n_estimators=n_estimators, max_depth=max_depth, learning_rate=learning_rate, random_state=42, verbose=-1)
+        return LGBMClassifier(n_estimators=n_estimators, max_depth=max_depth, learning_rate=learning_rate, class_weight='balanced', random_state=42, verbose=-1, n_jobs=-1)
 
 def tune_model(X_train, y_train, model_name, n_trials=20):
     """Executa o Optuna para encontrar os melhores hiperparâmetros num subset inicial."""

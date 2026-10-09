@@ -7,7 +7,7 @@ DATA_PATH = PROJECT_ROOT / "data"
 RESULTS_PATH = PROJECT_ROOT / "results"
 
 # Variável de controlo do pipeline
-RUN_TRANSFORMATION = False
+RUN_TRANSFORMATION = True
 
 # Caminho para o ficheiro processado
 PROCESSED_FILE_PATH = DATA_PATH / "processed_appointments.csv"
@@ -16,15 +16,15 @@ IMPORTANT_COLUMNS = [
     'PatientId',
     #'AppointmentID',
     'Gender',
-    'ScheduledDay', # 2016-04-29T16:08:27Z (podemos extrair ano, mes, dia, hora)
+    'ScheduledDay', # 2016-04-29T16:08:27Z (podemos extrair mes, dia, hora)
     'AppointmentDay', 
     'Age',
     'Neighbourhood',
-    'Scholarship',
-    'Hipertension',
-    'Diabetes',
-    'Alcoholism',
-    'Handcap',
+    #'Scholarship',
+    #'Hipertension',
+    #'Diabetes',
+    #'Alcoholism',
+    #'Handcap',
     'SMS_received',
     'No-show'
     ]
@@ -41,5 +41,5 @@ modelos = [
 
 TEST_SIZE = 0.2
 
-NUMBER_OF_SEEDS = 100
-OPTUNA_TRAIN_STEPS = 20
+NUMBER_OF_SEEDS = 10
+OPTUNA_TRAIN_STEPS = 30
