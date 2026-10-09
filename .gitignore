@@ -1,2 +1,5 @@
 **/.env
 **/modelo_lcm
+**/results
+**/__pycache__
+**/assets
