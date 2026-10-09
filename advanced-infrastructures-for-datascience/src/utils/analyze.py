@@ -10,7 +10,7 @@ def analyze_data(df):
     print("--- Contagem de Valores Nulos ---")
     print(df.isnull().sum())
     
-    categorical_features = ['Gender', 'Scholarship', 'Hipertension', 'Diabetes', 'Alcoholism', 'Handcap', 'SMS_received']
+    categorical_features = ['Gender', 'Scholarship', 'Hipertension', 'Diabetes', 'Alcoholism', 'Handcap', 'SMS_received', 'Neighbourhood']
     print("\n--- Distribuição das Variáveis Categóricas (%) ---")
     for col in categorical_features:
         if col in df.columns:
