@@ -6,12 +6,18 @@ RAW_DATA_PATH = PROJECT_ROOT / "assets" / "appointments_dataset.csv"
 DATA_PATH = PROJECT_ROOT / "data"
 RESULTS_PATH = PROJECT_ROOT / "results"
 
+# Variável de controlo do pipeline
+RUN_TRANSFORMATION = False
+
+# Caminho para o ficheiro processado
+PROCESSED_FILE_PATH = DATA_PATH / "processed_appointments.csv"
+
 IMPORTANT_COLUMNS = [
     'PatientId',
-    'AppointmentID',
+    #'AppointmentID',
     'Gender',
-    'ScheduledDay',
-    'AppointmentDay',
+    'ScheduledDay', # 2016-04-29T16:08:27Z (podemos extrair ano, mes, dia, hora)
+    'AppointmentDay', 
     'Age',
     'Neighbourhood',
     'Scholarship',
@@ -22,7 +28,18 @@ IMPORTANT_COLUMNS = [
     'SMS_received',
     'No-show'
     ]
-'''
-Informações importantes que podem ser relevantes serem extraídas:
-- 
-'''
+
+# Training model variables
+# Definir quais modelos queremos testar (podes comentar algum para testar mais rápido)
+modelos = [
+    'LogisticRegression', 
+    'KNN', 
+    'RandomForest', 
+    'XGBoost', 
+    'LightGBM'
+]
+
+TEST_SIZE = 0.2
+
+NUMBER_OF_SEEDS = 100
+OPTUNA_TRAIN_STEPS = 20
