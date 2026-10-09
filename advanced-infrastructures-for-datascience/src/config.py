@@ -5,6 +5,9 @@ PROJECT_ROOT = Path().cwd()
 RAW_DATA_PATH = PROJECT_ROOT / "assets" / "appointments_dataset.csv"
 DATA_PATH = PROJECT_ROOT / "data"
 RESULTS_PATH = PROJECT_ROOT / "results"
+MODELS_PATH = RESULTS_PATH / "models"
+MATRICES_PATH = RESULTS_PATH / "confusion_matrices"
+
 
 # Variável de controlo do pipeline
 RUN_TRANSFORMATION = True
@@ -16,21 +19,20 @@ IMPORTANT_COLUMNS = [
     'PatientId',
     #'AppointmentID',
     'Gender',
-    'ScheduledDay', # 2016-04-29T16:08:27Z (podemos extrair mes, dia, hora)
+    'ScheduledDay', # 2016-04-29T16:08:27Z (podemos extrair mes, dia, hora,...)
     'AppointmentDay', 
     'Age',
     'Neighbourhood',
-    #'Scholarship',
-    #'Hipertension',
-    #'Diabetes',
-    #'Alcoholism',
-    #'Handcap',
+    'Scholarship',
+    'Hipertension',
+    'Diabetes',
+    'Alcoholism',
+    'Handcap',
     'SMS_received',
     'No-show'
     ]
 
 # Training model variables
-# Definir quais modelos queremos testar (podes comentar algum para testar mais rápido)
 modelos = [
     'LogisticRegression', 
     'KNN', 
