@@ -1,0 +1,39 @@
+# cvc-a3/config.yaml
+
+io:
+  camera_id: 0                  # 0 para webcam, ou caminho para 'data/test_videos/video.mp4'
+  target_fps: 30
+  display_width: 1280
+
+modules:
+  enable_detection: true        # Ligar/desligar módulos para testes isolados
+  enable_attributes: true
+  enable_recognition: true
+
+detection:
+  model_name: "buffalo_l"       # Usa SCRFD por defeito no InsightFace
+  det_thresh: 0.5               # Limiar de confiança para deteção
+  nms_thresh: 0.4               # Non-maximum suppression
+
+attributes:
+  age_gender_model: "models/attributes/age_gender.onnx"
+  expression_model: "models/attributes/expression.onnx"
+  expression_model_name: "enet_b0_8_best_afew"
+  gender_conf_thresh: 0.70
+
+recognition:
+  gallery_path: "data/gallery"
+  similarity_threshold: 0.45    # Limiar para rejeição
+
+evaluation:
+  wider_face_gt: "data/datasets/wider_face/wider_face_split/wider_face_val_bbx_gt.txt"
+  wider_face_img_dir: "data/datasets/wider_face/WIDER_val/images"
+  utkface_img_dir: "data/datasets/utkface/UTKFace"  # Adicionar esta linha
+  btfer_img_dir: "data/datasets/btfer"
+
+identity:
+  model_name: "buffalo_l"
+  gallery_path: "data/gallery/gallery.json"
+  eval_dir: "data/datasets/gallery_eval"
+  similarity_threshold: 0.40
+  max_identities: 19
